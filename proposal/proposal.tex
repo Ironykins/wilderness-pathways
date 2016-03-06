@@ -1,0 +1,80 @@
+% 
+% Example file for conference proceedings in Springer Verlag's LNCS format
+%
+% Christian Jacob, September 2007
+% (with LaTeX code provided by Navneet Bhalla)
+%
+
+\documentclass[10pt,runningheads]{llncs}
+\usepackage{llncsdoc}
+\usepackage{makeidx}
+
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% Preamble: Packages required for the paper
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{epstopdf}
+\makeindex
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+\begin{document}
+
+\title{Wilderness Exploration and Pathway Formation}
+%\subtitle{<subtitle of your contribution>}
+%\titlerunning{<Your abbreviated contribution title>} 
+%\toctitle{<Your changed title for the table of contents>}
+
+\author{Konrad Aust and Mark Barley}
+%\authorrunning{<abbreviated author list>}
+%\tocauthor{<enhanced author list for the table of contents>}
+
+\institute{ 
+Dept. of Computer Science, Faculty of Science, University of Calgary \\
+\email{ktaust@ucalgary.ca, mpbarley@ucalgary.ca}
+}
+
+\maketitle
+
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% ABSTRACT
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\begin{abstract} 
+In this project, we will explore the emergent behaviors of destructive agents moving through wilderness terrain. Specifically, we will investigate how pathways are created in the landscape.
+\end{abstract}
+
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% MAIN TEXT
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\section{Project Details}
+We will implement this project using NetLogo 5.1. The two main components of this project are terrain and agents. 
+
+Terrain is represented with patches. Each unit of terrain keeps track of a difficulty value, an integrity value, and a hardness value. The difficulty value represents how much of a movement penalty an agent receives for passing through this square. The integrity value refers to the structural integrity of that piece of terrain. As agents move over the terrain, its integrity value is decreased. The hardness value represents how resistant the piece of terrain is to being trampled. (For instance, a rock will have higher hardness than a fern, so walking over a rock does not reduce its integrity as much as it would a fern.)
+
+Agents are represented as turtles. Each agent is created with a specific destination, and they follow a simple set of rules to try to reach it. This ruleset will evaluate nearby terrain, and attempt to move in the direction of the destination whilst attempting to travel on lower difficulty terrain. 
+
+\section{Ideas for Extension}
+Time permitting, there is additional functionality that we would like to investigate. Here are three of our best ideas:
+
+\begin{itemize}  
+    %\item Garbage/Pheromone Trails \\
+        %If a path has been walked over recently, the dirty humans who walked it leave a trail of litter. Other agents can follow this trail, much like ants follow a pheromone trail.
+
+    \item \textbf{Geographical Features} \\
+        It does not make sense to have uniformly random terrain. If terrain could be generated more realistically -- by including mountains, heavily forested areas, and other groups of similar patches -- it could have more realistic effects on path formation.
+    \item \textbf{Settlements} \\
+        Instead of having arbitrary destination points for the agents, there could be reserved spaces that serve as settlements. Agents will travel between these settlements. 
+    \item \textbf{Regrowing Terrain} \\
+        Certain types of terrain (eg. Bushes, trees) may regenerate integrity if left alone.
+    %\item Resources \\
+        %Extending the settlement idea, agents could be sent to retrieve resources from a point on the map and bring it back to their settlement. Resources would also be randomly generated, as part of the terrain.
+\end{itemize}
+
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% Index (optional): collects items in text from \index{...} command
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%\printindex
+
+\end{document}
