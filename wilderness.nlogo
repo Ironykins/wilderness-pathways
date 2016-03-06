@@ -1,4 +1,4 @@
-patches-own [difficulty durability]
+patches-own [difficulty hardness integrity biome]
 globals [maxDifficulty]
 
 to setup
@@ -6,7 +6,6 @@ to setup
   reset-ticks
   set maxDifficulty 30
   makemap           ; Create the terrain.
-
 
   create-turtles 10
   ask turtles
@@ -39,15 +38,29 @@ to makemap
   ask patches [
     set difficulty random maxDifficulty
     set pcolor [0 0 0]
+    set biome 0
   ]
+  voronoiPoints
   updatemap
+end
+
+; Generates the points for voronoi tesselation.
+to voronoiPoints
+  repeat biome_count [
+    ask patch random-pxcor random-pycor  [
+      set biome 1
+    ]
+  ]
 end
 
 ; Updates the map colours based on their difficulty.
 to updatemap
   ask patches [
     let val ((1 - (difficulty / maxDifficulty)) * 255)
-    set pcolor replace-item 1 pcolor ((1 - (difficulty / maxDifficulty)) * 255)  ; For setting only green value
+;    set pcolor replace-item 1 pcolor ((1 - (difficulty / maxDifficulty)) * 255)  ; For setting only green value
+    ifelse biome = 1
+    [ set pcolor red ]
+    [ set pcolor blue ]
     ;set pcolor (list val val val)
     ;if difficulty = 0 [
      ; set pcolor replace-item 0 pcolor 255
@@ -57,26 +70,26 @@ to updatemap
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
+236
 10
-909
-730
-26
-26
-13.0
+896
+691
+32
+32
+10.0
 1
 10
 1
 1
 1
 0
+0
+0
 1
-1
-1
--26
-26
--26
-26
+-32
+32
+-32
+32
 0
 0
 1
@@ -116,6 +129,21 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+38
+127
+218
+160
+biome_count
+biome_count
+1
+40
+17
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
