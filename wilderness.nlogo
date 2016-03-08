@@ -79,19 +79,19 @@ end
 to genIntegrity
   set max_integrity 100
   let total 0
-  let p 1
+  let p 0.5
   let n 10
   let i 0
 
   repeat n [
     let freq 2 ^ i
     let amp p ^ i
+    set i (i + 1)
 
     set total total + (interpolated_noise (pxcor * freq) (pycor * freq)) * amp
   ]
 
-
-  set integrity total
+  set integrity total * 30
 end
 
 ; Linearly Interpolates between a0 and a1 with weight w
@@ -539,7 +539,7 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.3.1
+NetLogo 5.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
