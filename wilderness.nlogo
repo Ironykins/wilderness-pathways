@@ -1,4 +1,4 @@
-patches-own [difficulty hardness integrity biome]
+patches-own [difficulty hardness integrity max_integrity biome]
 globals [maxDifficulty]
 
 to setup
@@ -37,36 +37,87 @@ end
 to makemap
   ask patches [
     set difficulty random maxDifficulty
+
     set pcolor [0 0 0]
     set biome 0
+    genIntegrity
   ]
-  voronoiPoints
+  ;voronoiPoints
   updatemap
 end
 
 ; Generates the points for voronoi tesselation.
-to voronoiPoints
-  repeat biome_count [
-    ask patch random-pxcor random-pycor  [
-      set biome 1
-    ]
-  ]
-end
+;to voronoiPoints
+;  repeat biome_count [
+;    ask patch random-pxcor random-pycor  [
+;      set biome 1
+;    ]
+;  ]
+;end
 
 ; Updates the map colours based on their difficulty.
 to updatemap
   ask patches [
     let val ((1 - (difficulty / maxDifficulty)) * 255)
-;    set pcolor replace-item 1 pcolor ((1 - (difficulty / maxDifficulty)) * 255)  ; For setting only green value
-    ifelse biome = 1
-    [ set pcolor red ]
-    [ set pcolor blue ]
+    set pcolor replace-item 1 pcolor ((1 - (integrity / max_integrity)) * 255)  ; For setting only green value
     ;set pcolor (list val val val)
     ;if difficulty = 0 [
      ; set pcolor replace-item 0 pcolor 255
     ;]
 ;    let newcolor (list random 0 random 190 random 60)
   ]
+end
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Code for Perlin Noise Generation
+;http://stackoverflow.com/questions/4753055/perlin-noise-generation-for-terrain
+;http://freespace.virgin.net/hugo.elias/models/m_perlin.htm
+
+; Generates the integrity values of all patches.
+; Uses perlin noise to generate.
+; Called for each patch.
+to genIntegrity
+  set max_integrity 100
+  let total 0
+  let p 1
+  let n 10
+  let i 0
+
+  repeat n [
+    let freq 2 ^ i
+    let amp p ^ i
+
+    set total total + (interpolated_noise (pxcor * freq) (pycor * freq)) * amp
+  ]
+
+
+  set integrity total
+end
+
+; Linearly Interpolates between a0 and a1 with weight w
+to-report lerp [a0 a1 w]
+  report ( 1.0 - w ) * a0 + w * a1;
+end
+
+; A basic noise generation function. This could be better
+; But netlogo doesn't seem to have native bitwise operators.
+; Generates values in the range (0.0, 1.0)
+to-report basic_noise [x y]
+  let n (x * 500 + y * 57)
+  random-seed n
+  report random-float 1
+end
+
+to-report interpolated_noise [x y]
+  let v1 (basic_noise x y)
+  let v2 (basic_noise (x + 1) y)
+  let v3 (basic_noise x (y + 1))
+  let v4 (basic_noise (x + 1) (y + 1))
+
+  let i1 lerp v1 v2 1.0
+  let i2 lerp v3 v4 1.0
+
+  report lerp i1 i2 1.0
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -488,7 +539,7 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.3
+NetLogo 5.3.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
