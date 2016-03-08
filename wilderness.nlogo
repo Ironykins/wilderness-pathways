@@ -25,8 +25,6 @@ to go
       if difficulty < 0 [
         set difficulty 0
       ]
-
-      ;set pcolor red
     ]
   ]
   updatemap
@@ -60,11 +58,6 @@ to updatemap
   ask patches [
     let val ((1 - (difficulty / maxDifficulty)) * 255)
     set pcolor replace-item 1 pcolor ((1 - (integrity / max_integrity)) * 255)  ; For setting only green value
-    ;set pcolor (list val val val)
-    ;if difficulty = 0 [
-     ; set pcolor replace-item 0 pcolor 255
-    ;]
-;    let newcolor (list random 0 random 190 random 60)
   ]
 end
 
@@ -79,7 +72,7 @@ end
 to genIntegrity
   set max_integrity 100
   let total 0
-  let p 0.5
+  let p 0.50
   let n 10
   let i 0
 
@@ -103,7 +96,7 @@ end
 ; But netlogo doesn't seem to have native bitwise operators.
 ; Generates values in the range (0.0, 1.0)
 to-report basic_noise [x y]
-  let n (x * 500 + y * 57)
+  let n (x * 500 + y * 57) + map_seed
   random-seed n
   report random-float 1
 end
@@ -114,10 +107,10 @@ to-report interpolated_noise [x y]
   let v3 (basic_noise x (y + 1))
   let v4 (basic_noise (x + 1) (y + 1))
 
-  let i1 lerp v1 v2 1.0
-  let i2 lerp v3 v4 1.0
+  let i1 lerp v1 v2 0.5
+  let i2 lerp v3 v4 0.5
 
-  report lerp i1 i2 1.0
+  report lerp i1 i2 0.5
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -195,6 +188,17 @@ biome_count
 1
 NIL
 HORIZONTAL
+
+INPUTBOX
+25
+201
+186
+261
+map_seed
+2341
+1
+0
+Number
 
 @#$#@#$#@
 ## WHAT IS IT?
