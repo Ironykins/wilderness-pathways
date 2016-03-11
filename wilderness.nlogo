@@ -1,32 +1,19 @@
 patches-own [difficulty hardness integrity max_integrity biome]
-globals [maxDifficulty]
+globals [maxDifficulty available-colors current-point]
+breed [points point]
 
 to setup
   clear-all
   reset-ticks
   set maxDifficulty 30
+
+  set available-colors shuffle filter [(? mod 10 >= 3) and (? mod 10 <= 7)]
+                                      n-values 140 [?]
+
   makemap           ; Create the terrain.
-
-  create-turtles 10
-  ask turtles
-  [
-    set shape "turtle"
-    set size 2
-    fd 1
-    rt 90]
-
 end
 
 to go
-  ask turtles [ fd 1
-    ask patch-at 0 0 [
-      set difficulty (difficulty - 1)
-
-      if difficulty < 0 [
-        set difficulty 0
-      ]
-    ]
-  ]
   updatemap
   tick
   display
@@ -40,31 +27,43 @@ to makemap
     set biome 0
     genIntegrity
   ]
+
+  ask n-of biome_count patches [ make-point ]
+  set current-point nobody
+
   ;voronoiPoints
   updatemap
 end
-
-; Generates the points for voronoi tesselation.
-;to voronoiPoints
-;  repeat biome_count [
-;    ask patch random-pxcor random-pycor  [
-;      set biome 1
-;    ]
-;  ]
-;end
 
 ; Updates the map colours based on their difficulty.
 to updatemap
   ask patches [
     let val ((1 - (difficulty / maxDifficulty)) * 255)
     set pcolor replace-item 1 pcolor ((1 - (integrity / max_integrity)) * 255)  ; For setting only green value
+
+    set pcolor [color] of min-one-of points [distance myself] ; Voronoi points colour
   ]
 end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;Code for Perlin Noise Generation
-;http://stackoverflow.com/questions/4753055/perlin-noise-generation-for-terrain
-;http://freespace.virgin.net/hugo.elias/models/m_perlin.htm
+; Code for Voronoi Tesselation
+; Taken from the Voronoi model packaged with NetLogo
+; Copyright 2006 Uri Wilensky.
+; More info: http://ccl.northwestern.edu/netlogo/models/Voronoi
+
+to make-point ; patch procedure
+  sprout-points 1 [
+    set size 5
+    set color first available-colors
+    set available-colors butfirst available-colors
+  ]
+end
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Code for Perlin Noise Generation
+; http://stackoverflow.com/questions/4753055/perlin-noise-generation-for-terrain
+; http://freespace.virgin.net/hugo.elias/models/m_perlin.htm
+; TODO: This is held back by being slow. The noise at points x,y should be somehow memoized.
 
 ; Generates the integrity values of all patches.
 ; Uses perlin noise to generate.
@@ -72,13 +71,11 @@ end
 to genIntegrity
   set max_integrity 100
   let total 0
-  let p 0.50
-  let n 10
   let i 0
 
-  repeat n [
+  repeat map_noise_octaves - 1 [
     let freq 2 ^ i
-    let amp p ^ i
+    let amp map_noise_persistence ^ i
     set i (i + 1)
 
     set total total + (interpolated_noise (pxcor * freq) (pycor * freq)) * amp
@@ -96,7 +93,7 @@ end
 ; But netlogo doesn't seem to have native bitwise operators.
 ; Generates values in the range (0.0, 1.0)
 to-report basic_noise [x y]
-  let n (x * 500 + y * 57) + map_seed
+  let n (x * 500 + y * 57) + map_noise_seed
   random-seed n
   report random-float 1
 end
@@ -116,11 +113,11 @@ end
 GRAPHICS-WINDOW
 236
 10
-896
-691
-32
-32
-10.0
+891
+686
+64
+64
+5.0
 1
 10
 1
@@ -130,10 +127,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--32
-32
--32
-32
+-64
+64
+-64
+64
 0
 0
 1
@@ -141,10 +138,10 @@ ticks
 30.0
 
 BUTTON
-89
-64
-163
-97
+101
+15
+175
+48
 Setup
 setup
 NIL
@@ -158,10 +155,10 @@ NIL
 1
 
 BUTTON
-92
-22
-159
-55
+20
+16
+87
+49
 Go
 go
 T
@@ -175,30 +172,60 @@ NIL
 1
 
 SLIDER
-38
-127
-218
-160
+12
+70
+223
+103
 biome_count
 biome_count
 1
 40
-17
+10
 1
 1
 NIL
 HORIZONTAL
 
 INPUTBOX
-25
-201
-186
-261
-map_seed
+13
+203
+174
+263
+map_noise_seed
 2341
 1
 0
 Number
+
+SLIDER
+12
+110
+223
+143
+map_noise_octaves
+map_noise_octaves
+1
+10
+5
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+12
+153
+223
+186
+map_noise_persistence
+map_noise_persistence
+0
+1
+0.5
+0.1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
