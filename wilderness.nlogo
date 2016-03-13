@@ -1,16 +1,27 @@
-patches-own [difficulty hardness integrity max_integrity biome]
-globals [maxDifficulty available-colors current-point]
+patches-own [difficulty hardness integrity biome]
+globals [available-colors current-point biome-list max-integrity ]
 breed [points point]
 
 to setup
   clear-all
   reset-ticks
-  set maxDifficulty 30
 
-  set available-colors shuffle filter [(? mod 10 >= 3) and (? mod 10 <= 7)]
-                                      n-values 140 [?]
+  ; list <hardness> <difficulty-mult>
+  ; When walked on, the integrity deteriorates to (hardness * integrity)
+  ; The difficulty is difficulty-mult * integrity
+  set biome-list (list
+    (list 0.85 10) ; Forest
+    (list 0.95 2) ; Rocky
+    (list 0.40 20) ; Snow
+    (list 0.50 5) ; Fern
+    (list 0.90 4) ; Grass
+    (list 0.85 15) ; Jungle
+    (list 0.70 18) ; Swamp
+  )
 
-  makemap           ; Create the terrain.
+  set available-colors shuffle filter [(? mod 10 >= 3) and (? mod 10 <= 7)] n-values 140 [?]
+
+  makemap ; Make Terrain
 end
 
 to go
@@ -20,29 +31,31 @@ to go
 end
 
 to makemap
+  ask n-of biome_count patches [ make-point ]
   ask patches [
-    set difficulty random maxDifficulty
+    ;set difficulty random maxDifficulty
 
     set pcolor [0 0 0]
-    set biome 0
     genIntegrity
+    normalize_integrity
+
+    set biome [biome] of min-one-of points [distance myself]
   ]
 
-  ask n-of biome_count patches [ make-point ]
   set current-point nobody
-
-  ;voronoiPoints
-  updatemap
+ updatemap
 end
 
 ; Updates the map colours based on their difficulty.
 to updatemap
   ask patches [
-    let val ((1 - (difficulty / maxDifficulty)) * 255)
-    set pcolor replace-item 1 pcolor ((1 - (integrity / max_integrity)) * 255)  ; For setting only green value
+   ; let val ((1 - (difficulty / maxDifficulty)) * 255)
+    ;set pcolor replace-item 1 pcolor ((1 - (integrity / 1)) * 255)  ; For setting only green value
 
-    set pcolor [color] of min-one-of points [distance myself] ; Voronoi points colour
+    ;set pcolor [color] of min-one-of points [distance myself] ; Voronoi points colour
+    set pcolor [biome] of min-one-of points [distance myself] ; Voronoi points colour
   ]
+
 end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -56,6 +69,7 @@ to make-point ; patch procedure
     set size 5
     set color first available-colors
     set available-colors butfirst available-colors
+    set biome random (length biome-list)
   ]
 end
 
@@ -69,7 +83,6 @@ end
 ; Uses perlin noise to generate.
 ; Called for each patch.
 to genIntegrity
-  set max_integrity 100
   let total 0
   let i 0
 
@@ -81,12 +94,20 @@ to genIntegrity
     set total total + (interpolated_noise (pxcor * freq) (pycor * freq)) * amp
   ]
 
-  set integrity total * 30
+  set integrity total
+
+  ; Keep track of what our maximum integrity is.
+  if integrity > max-integrity [ set max-integrity integrity ]
 end
 
 ; Linearly Interpolates between a0 and a1 with weight w
 to-report lerp [a0 a1 w]
   report ( 1.0 - w ) * a0 + w * a1;
+end
+
+; Puts integrity as a number between 1 and 0
+to normalize_integrity
+  set integrity (integrity / max-integrity)
 end
 
 ; A basic noise generation function. This could be better
@@ -221,7 +242,7 @@ map_noise_persistence
 map_noise_persistence
 0
 1
-0.5
+0.1
 0.1
 1
 NIL
@@ -570,7 +591,7 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.3
+NetLogo 5.3.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
