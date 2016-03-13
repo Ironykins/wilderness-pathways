@@ -1,5 +1,5 @@
 patches-own [difficulty hardness integrity biome basecolor]
-globals [available-colors current-point biome-list max-integrity ]
+globals [biome-list max-integrity]
 breed [points point]
 
 to setup
@@ -21,7 +21,6 @@ to setup
     (list 0.70 18 120) ; Swamp. Magenta
   )
 
-  set available-colors shuffle filter [(? mod 10 >= 3) and (? mod 10 <= 7)] n-values 140 [?]
   makemap ; Make Terrain
   clear-turtles ; Remove the turtles used for biome generation.
 end
@@ -41,9 +40,7 @@ to makemap
     set biome [biome] of min-one-of points [distance myself]
     set basecolor item 2 (item biome biome-list)
   ]
-
-  set current-point nobody
- updatemap
+  updatemap
 end
 
 ; Updates the map colours based on their difficulty.
@@ -63,8 +60,6 @@ end
 to make-point ; patch procedure
   sprout-points 1 [
     set size 5
-    set color first available-colors
-    set available-colors butfirst available-colors
     set biome random (length biome-list)
   ]
 end
