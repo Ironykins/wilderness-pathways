@@ -32,48 +32,39 @@ to go
 end
 
 to makemap
-  ask n-of biome_count patches [ make-point ]
+  ;; Create points for Biomes (Voronoi Points
+  ;; Voronoi Code Copyright 2006 Uri Wilensky.
+  ;; More info: http://ccl.northwestern.edu/netlogo/models/Voronoi
+  ask n-of biome_count patches [ sprout-points 1 [ set biome random (length biome-list) ] ]
+
   ask patches [
-    genIntegrity
+    set integrity (perlin_noise pxcor pycor) ; Generate the integrity of the patch based on perlin noise.
     set integrity (integrity / max-integrity) ; Make the integrity a float between 0 and 1.
 
-    set biome [biome] of min-one-of points [distance myself]
-    set basecolor item 2 (item biome biome-list)
+    set biome [biome] of min-one-of points [distance myself] ;; Assign biomes based on voronoi point distance
+    set basecolor item 2 (item biome biome-list) ;; Color the biome
   ]
+
   updatemap
 end
 
 ; Updates the map colours based on their difficulty.
 to updatemap
   ask patches [
-    let addedColor ((1 - integrity) * 9.9) ; Max integrity = black.
+    let addedColor ((1 - integrity) * 6 + 1) ; Max integrity = black.
     set pcolor basecolor + addedColor
   ]
 end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Code for Voronoi Tesselation
-; Taken from the Voronoi model packaged with NetLogo
-; Copyright 2006 Uri Wilensky.
-; More info: http://ccl.northwestern.edu/netlogo/models/Voronoi
-
-to make-point ; patch procedure
-  sprout-points 1 [
-    set size 5
-    set biome random (length biome-list)
-  ]
-end
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Code for Perlin Noise Generation
-; http://stackoverflow.com/questions/4753055/perlin-noise-generation-for-terrain
 ; http://freespace.virgin.net/hugo.elias/models/m_perlin.htm
 ; TODO: This is held back by being slow. The noise at points x,y should be somehow memoized.
 
 ; Generates the integrity values of all patches.
 ; Uses perlin noise to generate.
 ; Called for each patch.
-to genIntegrity
+to-report perlin_noise [x y]
   let total 0
   let i 0
 
@@ -82,13 +73,13 @@ to genIntegrity
     let amp map_noise_persistence ^ i
     set i (i + 1)
 
-    set total total + (interpolated_noise (pxcor * freq) (pycor * freq)) * amp
+    set total total + (interpolated_noise (x * freq) (y * freq)) * amp
   ]
 
-  set integrity total
-
   ; Keep track of what our maximum integrity is.
-  if integrity > max-integrity [ set max-integrity integrity ]
+  if total > max-integrity [ set max-integrity total ]
+
+  report total
 end
 
 ; Linearly Interpolates between a0 and a1 with weight w
@@ -145,10 +136,10 @@ ticks
 30.0
 
 BUTTON
-101
-15
-175
-48
+96
+16
+170
+49
 Setup
 setup
 NIL
@@ -237,7 +228,7 @@ HORIZONTAL
 TEXTBOX
 24
 268
-174
+203
 286
 Enter -1 for a random seed
 11
@@ -587,7 +578,7 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.3.1
+NetLogo 5.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
