@@ -6,9 +6,9 @@ breed [points point]
 to setup
   clear-all
   reset-ticks
-  if map_seed != -1
+  ifelse map_seed != -1
   [ random-seed map_seed ]
-
+  [ random-seed new-seed ]
   ; list <hardness> <difficulty-mult> <base colour>
   ; When walked on, the integrity deteriorates to (hardness * integrity)
   ; The difficulty is difficulty-mult * integrity
@@ -22,31 +22,53 @@ to setup
     (list 0.70 18 120) ; Swamp. Magenta
   )
 
-  ;makemap ; Make Terrain
+  makemap ; Make Terrain
+
   clear-turtles ; Remove the turtles used for biome generation.
 end
 
 to go
-  ;updatemap
+  ;first we update the map
+  updatemap
+  ;then we spawn turtles
   spawn_phase
+  ;then turtles make their move
+  move_phase
+  ;then we deteriorate the new positions
+  deterioration_phase
 
   display
   tick
 end
 
+;start the deterioration of the map
+to deterioration_phase
+
+end
+
+;start the move phase
+to move_phase
+ask turtles [fd 1]
+end
+
+;start the phase of spawning turtles
 to spawn_phase
  if (count turtles) < max_turtles [if (ticks mod spawn_frequency) = 0 [fart]]
 
 end
 
+;fart
 to fart
   spawn_turt
 end
+
+;spawn a turtle at random border position, set destination opposite position
 to spawn_turt
   crt 1 [
-     let x_cor random ((2 * max-pxcor) - max-pxcor)
-     let y_cor random ((2 * max-pycor) - max-pycor)
-     let temp random 3
+     let x_cor (random (2 * max-pxcor)) - max-pxcor
+     let y_cor (random (2 * max-pycor)) - max-pycor
+     let temp random 4
+     print temp
      ifelse (temp) = 0
       [set x_cor max-pxcor]
       [ifelse temp = 1
@@ -57,10 +79,10 @@ to spawn_turt
       set xcor x_cor
       set ycor y_cor
       set color red
-      set size 5
+      set size 8
       set dest-x (0 - x_cor)
       set dest-y (0 - y_cor)
-      ask patch dest-x dest-y [set pcolor blue]
+      ;ask patch dest-x dest-y [set pcolor blue]
   ]
 
 end
@@ -224,7 +246,7 @@ INPUTBOX
 181
 262
 map_seed
-0
+5
 1
 0
 Number
@@ -278,7 +300,7 @@ max_turtles
 max_turtles
 0
 100
-50
+98
 1
 1
 NIL
