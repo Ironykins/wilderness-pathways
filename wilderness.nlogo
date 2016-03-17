@@ -1,4 +1,5 @@
 patches-own [difficulty hardness integrity biome basecolor]
+turtles-own [dest-x dest-y]
 globals [biome-list max-integrity]
 breed [points point]
 
@@ -21,14 +22,47 @@ to setup
     (list 0.70 18 120) ; Swamp. Magenta
   )
 
-  makemap ; Make Terrain
+  ;makemap ; Make Terrain
   clear-turtles ; Remove the turtles used for biome generation.
 end
 
 to go
-  updatemap
-  tick
+  ;updatemap
+  spawn_phase
+
   display
+  tick
+end
+
+to spawn_phase
+ if (count turtles) < max_turtles [if (ticks mod spawn_frequency) = 0 [fart]]
+
+end
+
+to fart
+  spawn_turt
+end
+to spawn_turt
+  crt 1 [
+     let x_cor random ((2 * max-pxcor) - max-pxcor)
+     let y_cor random ((2 * max-pycor) - max-pycor)
+     let temp random 3
+     ifelse (temp) = 0
+      [set x_cor max-pxcor]
+      [ifelse temp = 1
+        [set x_cor min-pxcor]
+        [ifelse temp = 2
+          [set y_cor max-pycor]
+          [set y_cor min-pycor]]]
+      set xcor x_cor
+      set ycor y_cor
+      set color red
+      set size 5
+      set dest-x (0 - x_cor)
+      set dest-y (0 - y_cor)
+      ask patch dest-x dest-y [set pcolor blue]
+  ]
+
 end
 
 to makemap
@@ -185,12 +219,12 @@ NIL
 HORIZONTAL
 
 INPUTBOX
-13
-203
-174
-263
+20
+202
+181
+262
 map_seed
--1
+0
 1
 0
 Number
@@ -234,6 +268,36 @@ Enter -1 for a random seed
 11
 0.0
 1
+
+SLIDER
+19
+306
+191
+339
+max_turtles
+max_turtles
+0
+100
+50
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+3
+347
+222
+380
+spawn_frequency
+spawn_frequency
+0
+100
+13
+1
+1
+ticks
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
