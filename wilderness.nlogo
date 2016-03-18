@@ -43,23 +43,49 @@ end
 
 ;start the deterioration of the map
 to deterioration_phase
-
+  ask turtles [
+   deteriorate_patch
+  ]
 end
 
+;deteriorate a patch
+to deteriorate_patch
+  set integrity deterioration_rate * integrity
+
+end
 ;start the move phase
 to move_phase
-ask turtles [fd 1]
+  ask turtles [
+      move-to initial_method xcor ycor
+    ]
+
+
+end
+to-report initial_method [destx desty]
+  let probabilities []
+  let total 0
+  ask neighbors [
+    let temp ((1 / difficulty) * ((abs (destx - pxcor)) + (abs (desty - pycor))))
+    set probabilities lput temp probabilities
+    set total (temp + total)
+  ]
+  let index 0
+  let number random total
+  foreach probabilities [
+    set total total - ?
+    ifelse total >= 0
+    [ask neighbors [ ifelse index = 0
+                       [report ?]
+                       [set index index - 1]]]
+    [set index index + 1]
+  ]
+  report patch-at -1 -1
 end
 
 ;start the phase of spawning turtles
 to spawn_phase
- if (count turtles) < max_turtles [if (ticks mod spawn_frequency) = 0 [fart]]
+ if (count turtles) < max_turtles [if (ticks mod spawn_frequency) = 0 [spawn_turt]]
 
-end
-
-;fart
-to fart
-  spawn_turt
 end
 
 ;spawn a turtle at random border position, set destination opposite position
@@ -96,7 +122,7 @@ to makemap
   ask patches [
     set integrity (perlin_noise pxcor pycor) ; Generate the integrity of the patch based on perlin noise.
     set integrity (integrity / max-integrity) ; Make the integrity a float between 0 and 1.
-
+    set hardness 1
     set biome [biome] of min-one-of points [distance myself] ;; Assign biomes based on voronoi point distance
     set basecolor item 2 (item biome biome-list) ;; Color the biome
   ]
@@ -109,6 +135,7 @@ to updatemap
   ask patches [
     let addedColor ((1 - integrity) * 6 + 1) ; Max integrity = black.
     set pcolor basecolor + addedColor
+    set difficulty int (1 / hardness) * integrity
   ]
 end
 
@@ -319,6 +346,21 @@ spawn_frequency
 1
 1
 ticks
+HORIZONTAL
+
+SLIDER
+6
+393
+211
+426
+deterioration_rate
+deterioration_rate
+0
+100
+50
+1
+1
+%
 HORIZONTAL
 
 @#$#@#$#@
