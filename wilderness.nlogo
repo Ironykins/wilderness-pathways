@@ -65,15 +65,15 @@ end
 to move_phase
   ask turtles [
       ;move-to first_method dest-x dest-y
-      move-to first_method dest-x dest-y
+      move-to multiplier_method dest-x dest-y xcor ycor
     ]
 
 end
-;report the closest to destination patch
-to-report closest_method [destx desty]
+;Best wokring one, uses a multiplier system based on closer or farther to destination
+to-report multiplier_method [destx desty myx myy]
   let closest patch-at 0 0
-  let bestx 999999999999
-  let besty 999999999999
+  let best 99999999999999
+
   if Tdebug = true  [
     type "Turtle " type xcor type " - " print ycor
     type dest-x type " - " print dest-y
@@ -81,19 +81,22 @@ to-report closest_method [destx desty]
   ]
   foreach sort neighbors [ ask ?[
     if Tdebug = true [type "PATCH " type pxcor type " - " type pycor type "==== "]
-    let deltax (abs (destx - pxcor))
-    let deltay (abs (desty - pycor))
-    if Tdebug [type deltax type " - " type deltay print "  "]
-    if  deltax <= bestx [ if deltay <= besty[
+    let multiplier 1
+    if abs (destx - pxcor) < (destx - myx) [set multiplier multiplier / 2]
+    if abs (desty - pycor) < (desty - myy) [set multiplier multiplier / 2]
+    if abs (destx - pxcor) > (destx - myx) [set multiplier multiplier * 2]
+    if abs (desty - pycor) > (desty - myy) [set multiplier multiplier * 2]
+    if Tdebug [type multiplier type " - " type difficulty print "  "]
+    if  difficulty * multiplier <= best [
       set closest ?
-      set bestx deltax
-      set besty deltay]]
+      set best difficulty * multiplier]
   ]]
   if Tdebug = true [print " " print " "]
   report closest
 
 end
 
+;this is an attempt at weighing with sliders, kinda works but not really
 to-report first_method [destx desty]
   let closest patch-at 0 0
   let bestx 999999999999
@@ -105,13 +108,37 @@ to-report first_method [destx desty]
   ]
   foreach sort neighbors [ ask ?[
     if Tdebug = true [type "PATCH " type pxcor type " - " type pycor type "==== "]
-    let deltax difficulty * (abs (destx - pxcor))
-    let deltay difficulty * (abs (desty - pycor))
+    let deltax (1 + difficulty_weight * difficulty) * (distance_weight * abs (destx - pxcor))
+    let deltay (1 + difficulty_weight * difficulty) * (distance_weight * abs (desty - pycor))
     if Tdebug [type deltax type " - " type deltay print "  "]
-    if  deltax <= bestx [ if deltay <= besty[
+    if  deltax + deltay <= bestx + besty [
       set closest ?
       set bestx deltax
-      set besty deltay]]
+      set besty deltay]
+  ]]
+  if Tdebug = true [print " " print " "]
+  report closest
+
+end
+
+to-report second_method [destx desty]
+  let closest patch-at 0 0
+  let bestx 999999999999
+  let besty 999999999999
+  if Tdebug = true  [
+    type "Turtle " type xcor type " - " print ycor
+    type dest-x type " - " print dest-y
+    print "#####################"
+  ]
+  foreach sort neighbors [ ask ?[
+    if Tdebug = true [type "PATCH " type pxcor type " - " type pycor type "==== "]
+    let deltax (1 + difficulty_weight * difficulty) * (distance_weight * abs (destx - pxcor))
+    let deltay (1 + difficulty_weight * difficulty) * (distance_weight * abs (desty - pycor))
+    if Tdebug [type deltax type " - " type deltay print "  "]
+    if  deltax + deltay <= bestx + besty [
+      set closest ?
+      set bestx deltax
+      set besty deltay]
   ]]
   if Tdebug = true [print " " print " "]
   report closest
@@ -141,7 +168,7 @@ to spawn_turt
       set xcor x_cor
       set ycor y_cor
       set color red
-      set size 8
+      set size 4
       set dest-x (0 - x_cor)
       set dest-y (0 - y_cor)
       ;ask patch dest-x dest-y [set pcolor blue]
@@ -363,7 +390,7 @@ max_turtles
 max_turtles
 0
 100
-98
+1
 1
 1
 NIL
@@ -378,7 +405,7 @@ spawn_frequency
 spawn_frequency
 0
 100
-13
+100
 1
 1
 ticks
@@ -393,17 +420,17 @@ deterioration_rate
 deterioration_rate
 0
 100
-50
+2
 1
 1
 %
 HORIZONTAL
 
 BUTTON
-52
-484
-130
-517
+50
+524
+128
+557
 NIL
 debug
 NIL
@@ -415,6 +442,36 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+7
+479
+180
+512
+distance_weight
+distance_weight
+0
+100
+94
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+9
+433
+181
+466
+difficulty_weight
+difficulty_weight
+0
+100
+1
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
