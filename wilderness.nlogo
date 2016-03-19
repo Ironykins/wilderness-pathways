@@ -1,7 +1,10 @@
 patches-own [difficulty hardness integrity biome basecolor]
 turtles-own [dest-x dest-y]
-globals [biome-list max-integrity]
+globals [biome-list max-integrity Tdebug]
 breed [points point]
+to debug
+  ifelse Tdebug [set Tdebug false] [set Tdebug true]
+end
 
 to setup
   clear-all
@@ -23,7 +26,7 @@ to setup
   )
 
   makemap ; Make Terrain
-
+  set Tdebug false
   clear-turtles ; Remove the turtles used for biome generation.
 end
 
@@ -45,7 +48,12 @@ end
 to deterioration_phase
   ask turtles [
    deteriorate_patch
+   deteriorate_turtle
   ]
+end
+to deteriorate_turtle
+  if xcor = dest-x [if ycor = dest-y [die]]
+
 end
 
 ;deteriorate a patch
@@ -56,30 +64,58 @@ end
 ;start the move phase
 to move_phase
   ask turtles [
-      move-to initial_method xcor ycor
+      ;move-to first_method dest-x dest-y
+      move-to first_method dest-x dest-y
     ]
 
+end
+;report the closest to destination patch
+to-report closest_method [destx desty]
+  let closest patch-at 0 0
+  let bestx 999999999999
+  let besty 999999999999
+  if Tdebug = true  [
+    type "Turtle " type xcor type " - " print ycor
+    type dest-x type " - " print dest-y
+    print "#####################"
+  ]
+  foreach sort neighbors [ ask ?[
+    if Tdebug = true [type "PATCH " type pxcor type " - " type pycor type "==== "]
+    let deltax (abs (destx - pxcor))
+    let deltay (abs (desty - pycor))
+    if Tdebug [type deltax type " - " type deltay print "  "]
+    if  deltax <= bestx [ if deltay <= besty[
+      set closest ?
+      set bestx deltax
+      set besty deltay]]
+  ]]
+  if Tdebug = true [print " " print " "]
+  report closest
 
 end
-to-report initial_method [destx desty]
-  let probabilities []
-  let total 0
-  ask neighbors [
-    let temp ((1 / difficulty) * ((abs (destx - pxcor)) + (abs (desty - pycor))))
-    set probabilities lput temp probabilities
-    set total (temp + total)
+
+to-report first_method [destx desty]
+  let closest patch-at 0 0
+  let bestx 999999999999
+  let besty 999999999999
+  if Tdebug = true  [
+    type "Turtle " type xcor type " - " print ycor
+    type dest-x type " - " print dest-y
+    print "#####################"
   ]
-  let index 0
-  let number random total
-  foreach probabilities [
-    set total total - ?
-    ifelse total >= 0
-    [ask neighbors [ ifelse index = 0
-                       [report ?]
-                       [set index index - 1]]]
-    [set index index + 1]
-  ]
-  report patch-at -1 -1
+  foreach sort neighbors [ ask ?[
+    if Tdebug = true [type "PATCH " type pxcor type " - " type pycor type "==== "]
+    let deltax difficulty * (abs (destx - pxcor))
+    let deltay difficulty * (abs (desty - pycor))
+    if Tdebug [type deltax type " - " type deltay print "  "]
+    if  deltax <= bestx [ if deltay <= besty[
+      set closest ?
+      set bestx deltax
+      set besty deltay]]
+  ]]
+  if Tdebug = true [print " " print " "]
+  report closest
+
 end
 
 ;start the phase of spawning turtles
@@ -94,7 +130,7 @@ to spawn_turt
      let x_cor (random (2 * max-pxcor)) - max-pxcor
      let y_cor (random (2 * max-pycor)) - max-pycor
      let temp random 4
-     print temp
+     if Tdebug [print temp]
      ifelse (temp) = 0
       [set x_cor max-pxcor]
       [ifelse temp = 1
@@ -273,7 +309,7 @@ INPUTBOX
 181
 262
 map_seed
-5
+-1
 1
 0
 Number
@@ -362,6 +398,23 @@ deterioration_rate
 1
 %
 HORIZONTAL
+
+BUTTON
+52
+484
+130
+517
+NIL
+debug
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
