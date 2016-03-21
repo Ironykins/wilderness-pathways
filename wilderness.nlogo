@@ -1,5 +1,5 @@
 patches-own [difficulty hardness integrity biome basecolor]
-turtles-own [dest-x dest-y]
+turtles-own [dest-x dest-y lastPatch]
 globals [biome-list max-integrity Tdebug]
 breed [points point]
 to debug
@@ -58,14 +58,19 @@ end
 
 ;deteriorate a patch
 to deteriorate_patch
-  set integrity deterioration_rate * integrity
 
+  ask patch-here[
+    let multRate item 0 (item biome (biome-list))
+    set integrity (deterioration_rate * multRate) * integrity
+  ]
 end
 ;start the move phase
 to move_phase
   ask turtles [
+      let temp patch-here
       ;move-to first_method dest-x dest-y
       move-to multiplier_method dest-x dest-y xcor ycor
+      set lastPatch temp
     ]
 
 end
@@ -79,7 +84,7 @@ to-report multiplier_method [destx desty myx myy]
     type dest-x type " - " print dest-y
     print "#####################"
   ]
-  foreach sort neighbors [ ask ?[
+  foreach sort neighbors [ if (? != lastPatch) [ask ?[
     if Tdebug = true [type "PATCH " type pxcor type " - " type pycor type "==== "]
     let multiplier 1
     if abs (destx - pxcor) < (destx - myx) [set multiplier multiplier / 2]
@@ -87,10 +92,10 @@ to-report multiplier_method [destx desty myx myy]
     if abs (destx - pxcor) > (destx - myx) [set multiplier multiplier * 2]
     if abs (desty - pycor) > (desty - myy) [set multiplier multiplier * 2]
     if Tdebug [type multiplier type " - " type difficulty print "  "]
-    if  difficulty * multiplier <= best [
+    if difficulty * multiplier <= best [
       set closest ?
-      set best difficulty * multiplier]
-  ]]
+      set best difficulty * multiplier]]
+    ]]
   if Tdebug = true [print " " print " "]
   report closest
 
@@ -171,6 +176,7 @@ to spawn_turt
       set size 4
       set dest-x (0 - x_cor)
       set dest-y (0 - y_cor)
+      set lastPatch patch-here
       ;ask patch dest-x dest-y [set pcolor blue]
   ]
 
@@ -390,7 +396,7 @@ max_turtles
 max_turtles
 0
 100
-1
+70
 1
 1
 NIL
@@ -419,9 +425,9 @@ SLIDER
 deterioration_rate
 deterioration_rate
 0
-100
-2
 1
+0.05
+.01
 1
 %
 HORIZONTAL
@@ -452,7 +458,7 @@ distance_weight
 distance_weight
 0
 100
-94
+99
 1
 1
 NIL
