@@ -11,7 +11,7 @@ patches-own [
   h
   parent-patch
 ]
-turtles-own [destpatch current-path]
+turtles-own [destpatch current-path last_pathupdate]
 globals [biome-list max-integrity]
 breed [points point]
 
@@ -119,7 +119,13 @@ to move_phase
           set current-path remove-item 0 current-path
       ]
 
-      if ticks mod 7 = 0 [ set current-path astar patch-here destpatch]
+      if last_pathupdate > route_update_frequency [
+        set current-path astar patch-here destpatch
+        set last_pathupdate 0
+      ]
+
+
+      set last_pathupdate last_pathupdate + 1
     ]
 end
 
@@ -457,7 +463,7 @@ spawn_frequency
 spawn_frequency
 0
 100
-20
+100
 1
 1
 ticks
@@ -569,6 +575,21 @@ sight_radius
 1
 128
 60
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+3
+488
+227
+521
+route_update_frequency
+route_update_frequency
+0
+50
+25
 1
 1
 NIL
