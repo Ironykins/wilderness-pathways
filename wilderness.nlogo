@@ -74,29 +74,35 @@ end
 ;spawn a turtle at random border position, set destination opposite position
 to spawn_turt
   crt 1 [
-     ; Initially, position is random.
-     let x_cor (random (2 * max-pxcor)) - max-pxcor
-     let y_cor (random (2 * max-pycor)) - max-pycor
+     let turt_edge random 4
+     let turt_coords (point-on-edge turt_edge)
+     set xcor first turt_coords
+     set ycor last turt_coords
 
-     ; Pick an edge
-     let temp random 4
-     if debug [print temp]
-
-     ifelse (temp) = 0
-      [set x_cor max-pxcor]
-      [ifelse temp = 1
-        [set x_cor min-pxcor]
-        [ifelse temp = 2
-          [set y_cor max-pycor]
-          [set y_cor min-pycor]]]
-      set xcor x_cor
-      set ycor y_cor
       set color red
-      set size 4
+      set size 6
 
-      set destpatch patch (0 - x_cor) (0 - y_cor)
+      let dest_edge random 3
+      if dest_edge >= turt_edge [set dest_edge dest_edge + 1]
+      let dest_coords (point-on-edge dest_edge)
+      set destpatch patch (first dest_coords) (last dest_coords)
       set current-path astar patch-here destpatch
   ]
+end
+
+;; Gets a random point on a specific edge of the map. 1 = north, 2 = south, 3 = west, 4 = east
+to-report point-on-edge [edge]
+  ; Initially, position is random.
+  let x_cor (random (2 * max-pxcor)) - max-pxcor
+  let y_cor (random (2 * max-pycor)) - max-pycor
+
+  ifelse edge = 0 [ set y_cor max-pycor ]
+  [ ifelse edge = 1 [ set y_cor min-pycor]
+    [ ifelse edge = 2 [ set x_cor min-pxcor ]
+      [ ifelse edge = 3 [ set x_cor max-pxcor ]
+      []]]]
+
+  report list x_cor y_cor
 end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -106,19 +112,15 @@ end
 ;start the move phase
 to move_phase
   ask turtles [
-      let temp patch-here
-      ;move-to first_method dest-x dest-y
-      ;move-to multiplier_method dest-x dest-y xcor ycor
+      ; Make the turtle move along its path
+      if length current-path != 0 [
+          face first current-path
+          move-to first current-path
+          set current-path remove-item 0 current-path
+      ]
 
-      ; Make the turtle move
-      if length current-path != 0 [ go-to-next-patch-in-current-path ]
+      if ticks mod 7 = 0 [ set current-path astar patch-here destpatch]
     ]
-end
-
-to go-to-next-patch-in-current-path
-  face first current-path
-  move-to first current-path
-  set current-path remove-item 0 current-path
 end
 
 ; the actual implementation of the A* path finding algorithm
@@ -171,7 +173,13 @@ to-report astar [ source-patch destination-patch]
 
               ; update the path finding variables of the eligible patch
               set parent-patch current-patch
-              set g ([g] of parent-patch) + difficulty
+              set g ([g] of parent-patch)
+
+              ; Consider path difficulty only for patches in sight radius.
+              if(distance source-patch < sight_radius)
+              [ set g g + difficulty ]
+
+
               set h distance destination-patch
               set f (g + h)
             ]
@@ -449,7 +457,7 @@ spawn_frequency
 spawn_frequency
 0
 100
-100
+20
 1
 1
 ticks
@@ -541,15 +549,30 @@ Magenta - Swamp
 1
 
 SWITCH
-7
-434
-118
-467
+12
+573
+123
+606
 debug
 debug
-0
+1
 1
 -1000
+
+SLIDER
+7
+439
+179
+472
+sight_radius
+sight_radius
+1
+128
+60
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
