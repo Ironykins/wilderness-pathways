@@ -1,5 +1,16 @@
-patches-own [difficulty hardness integrity biome basecolor]
-turtles-own [dest-x dest-y lastPatch]
+patches-own [
+  difficulty
+  hardness
+  integrity
+  biome
+  basecolor
+  ;; Used for A* pathfinding. Rewritten each time an agent tries to find a path.
+  f
+  g
+  h
+  parent-patch
+]
+turtles-own [destpatch lastPatch current-path]
 globals [biome-list max-integrity Tdebug]
 breed [points point]
 to debug
@@ -31,14 +42,14 @@ to setup
 end
 
 to go
-  ;first we update the map
-  updatemap
   ;then we spawn turtles
   spawn_phase
   ;then turtles make their move
   move_phase
   ;then we deteriorate the new positions
   deterioration_phase
+  ;Finally, we update the map
+  updatemap
 
   display
   tick
@@ -51,109 +62,133 @@ to deterioration_phase
    deteriorate_turtle
   ]
 end
-to deteriorate_turtle
-  if xcor = dest-x [if ycor = dest-y [die]]
 
+to deteriorate_turtle
+  if patch-here = destpatch [die]
 end
 
 ;deteriorate a patch
 to deteriorate_patch
-
-  ask patch-here[
+  ask patch-here [
     let multRate item 0 (item biome (biome-list))
-    set integrity (deterioration_rate * multRate) * integrity
+    set integrity ((1 - deterioration_rate) * multRate) * integrity
   ]
 end
+
 ;start the move phase
 to move_phase
   ask turtles [
       let temp patch-here
       ;move-to first_method dest-x dest-y
-      move-to multiplier_method dest-x dest-y xcor ycor
+      ;move-to multiplier_method dest-x dest-y xcor ycor
+
+      ; Make the turtle move
+      if length current-path != 0 [ go-to-next-patch-in-current-path ]
+
       set lastPatch temp
     ]
-
-end
-;Best wokring one, uses a multiplier system based on closer or farther to destination
-to-report multiplier_method [destx desty myx myy]
-  let closest patch-at 0 0
-  let best 99999999999999
-
-  if Tdebug = true  [
-    type "Turtle " type xcor type " - " print ycor
-    type dest-x type " - " print dest-y
-    print "#####################"
-  ]
-  foreach sort neighbors [ if (? != lastPatch) [ask ?[
-    if Tdebug = true [type "PATCH " type pxcor type " - " type pycor type "==== "]
-    let multiplier 1
-    if abs (destx - pxcor) < (destx - myx) [set multiplier multiplier / 2]
-    if abs (desty - pycor) < (desty - myy) [set multiplier multiplier / 2]
-    if abs (destx - pxcor) > (destx - myx) [set multiplier multiplier * 2]
-    if abs (desty - pycor) > (desty - myy) [set multiplier multiplier * 2]
-    if Tdebug [type multiplier type " - " type difficulty print "  "]
-    if difficulty * multiplier <= best [
-      set closest ?
-      set best difficulty * multiplier]]
-    ]]
-  if Tdebug = true [print " " print " "]
-  report closest
-
 end
 
-;this is an attempt at weighing with sliders, kinda works but not really
-to-report first_method [destx desty]
-  let closest patch-at 0 0
-  let bestx 999999999999
-  let besty 999999999999
-  if Tdebug = true  [
-    type "Turtle " type xcor type " - " print ycor
-    type dest-x type " - " print dest-y
-    print "#####################"
-  ]
-  foreach sort neighbors [ ask ?[
-    if Tdebug = true [type "PATCH " type pxcor type " - " type pycor type "==== "]
-    let deltax (1 + difficulty_weight * difficulty) * (distance_weight * abs (destx - pxcor))
-    let deltay (1 + difficulty_weight * difficulty) * (distance_weight * abs (desty - pycor))
-    if Tdebug [type deltax type " - " type deltay print "  "]
-    if  deltax + deltay <= bestx + besty [
-      set closest ?
-      set bestx deltax
-      set besty deltay]
-  ]]
-  if Tdebug = true [print " " print " "]
-  report closest
-
+to go-to-next-patch-in-current-path
+  face first current-path
+  move-to first current-path
+  set current-path remove-item 0 current-path
 end
 
-to-report second_method [destx desty]
-  let closest patch-at 0 0
-  let bestx 999999999999
-  let besty 999999999999
-  if Tdebug = true  [
-    type "Turtle " type xcor type " - " print ycor
-    type dest-x type " - " print dest-y
-    print "#####################"
-  ]
-  foreach sort neighbors [ ask ?[
-    if Tdebug = true [type "PATCH " type pxcor type " - " type pycor type "==== "]
-    let deltax (1 + difficulty_weight * difficulty) * (distance_weight * abs (destx - pxcor))
-    let deltay (1 + difficulty_weight * difficulty) * (distance_weight * abs (desty - pycor))
-    if Tdebug [type deltax type " - " type deltay print "  "]
-    if  deltax + deltay <= bestx + besty [
-      set closest ?
-      set bestx deltax
-      set besty deltay]
-  ]]
-  if Tdebug = true [print " " print " "]
-  report closest
+; the actual implementation of the A* path finding algorithm
+; it takes the source and destination patches as inputs
+; and reports the optimal path if one exists between them as output
+to-report astar [ source-patch destination-patch]
+  ; initialize all variables to default values
+  let search-done? false
+  let search-path []
+  let current-patch 0
+  let open []
+  let closed []
 
+  ; add source patch in the open list
+  set open lput source-patch open
+
+  ; loop until we reach the destination or the open list becomes empty
+  while [ search-done? != true]
+  [
+    ifelse length open != 0
+    [
+      ; sort the patches in open list in increasing order of their f() values
+      set open sort-by [[f] of ?1 < [f] of ?2] open
+
+      ; take the first patch in the open list
+      ; as the current patch (which is currently being explored (n))
+      ; and remove it from the open list
+      set current-patch item 0 open
+      set open remove-item 0 open
+
+      ; add the current patch to the closed list
+      set closed lput current-patch closed
+
+      ; explore the Von Neumann (left, right, top and bottom) neighbors of the current patch
+      ask current-patch
+      [
+        ; if any of the neighbors is the destination stop the search process
+        ifelse any? neighbors4 with [ (pxcor = [ pxcor ] of destination-patch) and (pycor = [pycor] of destination-patch)]
+        [ set search-done? true ]
+        [
+          ; the neighbors should not be obstacles or already explored patches (part of the closed list)
+          ask neighbors4 with [ pcolor != white and (not member? self closed) and (self != parent-patch) ]
+          [
+            ; the neighbors to be explored should also not be the source or
+            ; destination patches or already a part of the open list (unexplored patches list)
+            if not member? self open and self != source-patch and self != destination-patch
+            [
+              ; add the eligible patch to the open list
+              set open lput self open
+
+              ; update the path finding variables of the eligible patch
+              set parent-patch current-patch
+              set g ([g] of parent-patch) + difficulty
+              set h distance destination-patch
+              set f (g + h)
+            ]
+          ]
+        ]
+      ]
+    ]
+    [
+      ; if a path is not found (search is incomplete) and the open list is exhausted
+      ; display a user message and report an empty search path list.
+      user-message( "A path from the source to the destination does not exist." )
+      report []
+    ]
+  ]
+
+  ; if a path is found (search completed) add the current patch
+  ; (node adjacent to the destination) to the search path.
+  set search-path lput current-patch search-path
+
+  ; trace the search path from the current patch
+  ; all the way to the source patch using the parent patch
+  ; variable which was set during the search for every patch that was explored
+  let temp first search-path
+  while [ temp != source-patch ]
+  [
+    set search-path lput [parent-patch] of temp search-path
+    set temp [parent-patch] of temp
+  ]
+
+  ; add the destination patch to the front of the search path
+  set search-path fput destination-patch search-path
+
+  ; reverse the search path so that it starts from a patch adjacent to the
+  ; source patch and ends at the destination patch
+  set search-path reverse search-path
+
+  ; report the search path
+  report search-path
 end
 
 ;start the phase of spawning turtles
 to spawn_phase
  if (count turtles) < max_turtles [if (ticks mod spawn_frequency) = 0 [spawn_turt]]
-
 end
 
 ;spawn a turtle at random border position, set destination opposite position
@@ -174,13 +209,16 @@ to spawn_turt
       set ycor y_cor
       set color red
       set size 4
-      set dest-x (0 - x_cor)
-      set dest-y (0 - y_cor)
+      set destpatch patch (0 - x_cor) (0 - y_cor)
       set lastPatch patch-here
       ;ask patch dest-x dest-y [set pcolor blue]
-  ]
 
+      set current-path astar patch-here destpatch
+  ]
 end
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Map Generation
 
 to makemap
   ;; Create points for Biomes (Voronoi Points
@@ -205,6 +243,10 @@ to updatemap
     let addedColor ((1 - integrity) * 6 + 1) ; Max integrity = black.
     set pcolor basecolor + addedColor
     set difficulty int (1 / hardness) * integrity
+    set f 0
+    set g 0
+    set h 0
+    set parent-patch nobody
   ]
 end
 
