@@ -4,18 +4,16 @@ patches-own [
   integrity
   biome
   basecolor
-  ;; Used for A* pathfinding. Rewritten each time an agent tries to find a path.
+
+  ;; Used for A* pathfinding speedups. Rewritten each time an agent tries to find a path.
   f
   g
   h
   parent-patch
 ]
-turtles-own [destpatch lastPatch current-path]
-globals [biome-list max-integrity Tdebug]
+turtles-own [destpatch current-path]
+globals [biome-list max-integrity]
 breed [points point]
-to debug
-  ifelse Tdebug [set Tdebug false] [set Tdebug true]
-end
 
 to setup
   clear-all
@@ -37,7 +35,6 @@ to setup
   )
 
   makemap ; Make Terrain
-  set Tdebug false
   clear-turtles ; Remove the turtles used for biome generation.
 end
 
@@ -58,22 +55,53 @@ end
 ;start the deterioration of the map
 to deterioration_phase
   ask turtles [
-   deteriorate_patch
-   deteriorate_turtle
+    ;; Reduce the integrity of patches being stepped on
+    ask patch-here [
+      let multRate item 0 (item biome (biome-list))
+      set integrity (deterioration_rate * multRate) * integrity
+    ]
+
+    ;; Kill turtles who have gotten to their destination
+    if patch-here = destpatch [die]
   ]
 end
 
-to deteriorate_turtle
-  if patch-here = destpatch [die]
+;start the phase of spawning turtles
+to spawn_phase
+ if (count turtles) < max_turtles [if (ticks mod spawn_frequency) = 0 [spawn_turt]]
 end
 
-;deteriorate a patch
-to deteriorate_patch
-  ask patch-here [
-    let multRate item 0 (item biome (biome-list))
-    set integrity ((1 - deterioration_rate) * multRate) * integrity
+;spawn a turtle at random border position, set destination opposite position
+to spawn_turt
+  crt 1 [
+     ; Initially, position is random.
+     let x_cor (random (2 * max-pxcor)) - max-pxcor
+     let y_cor (random (2 * max-pycor)) - max-pycor
+
+     ; Pick an edge
+     let temp random 4
+     if debug [print temp]
+
+     ifelse (temp) = 0
+      [set x_cor max-pxcor]
+      [ifelse temp = 1
+        [set x_cor min-pxcor]
+        [ifelse temp = 2
+          [set y_cor max-pycor]
+          [set y_cor min-pycor]]]
+      set xcor x_cor
+      set ycor y_cor
+      set color red
+      set size 4
+
+      set destpatch patch (0 - x_cor) (0 - y_cor)
+      set current-path astar patch-here destpatch
   ]
 end
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Movement and Pathfinding
 
 ;start the move phase
 to move_phase
@@ -84,8 +112,6 @@ to move_phase
 
       ; Make the turtle move
       if length current-path != 0 [ go-to-next-patch-in-current-path ]
-
-      set lastPatch temp
     ]
 end
 
@@ -186,37 +212,7 @@ to-report astar [ source-patch destination-patch]
   report search-path
 end
 
-;start the phase of spawning turtles
-to spawn_phase
- if (count turtles) < max_turtles [if (ticks mod spawn_frequency) = 0 [spawn_turt]]
-end
-
-;spawn a turtle at random border position, set destination opposite position
-to spawn_turt
-  crt 1 [
-     let x_cor (random (2 * max-pxcor)) - max-pxcor
-     let y_cor (random (2 * max-pycor)) - max-pycor
-     let temp random 4
-     if Tdebug [print temp]
-     ifelse (temp) = 0
-      [set x_cor max-pxcor]
-      [ifelse temp = 1
-        [set x_cor min-pxcor]
-        [ifelse temp = 2
-          [set y_cor max-pycor]
-          [set y_cor min-pycor]]]
-      set xcor x_cor
-      set ycor y_cor
-      set color red
-      set size 4
-      set destpatch patch (0 - x_cor) (0 - y_cor)
-      set lastPatch patch-here
-      ;ask patch dest-x dest-y [set pcolor blue]
-
-      set current-path astar patch-here destpatch
-  ]
-end
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Map Generation
 
@@ -468,58 +464,92 @@ deterioration_rate
 deterioration_rate
 0
 1
-0.05
+1
 .01
 1
-%
+NIL
 HORIZONTAL
 
-BUTTON
-50
-524
-128
-557
-NIL
-debug
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
+TEXTBOX
+918
+59
+1068
+77
+Green - Forest
+12
+0.0
 1
 
-SLIDER
+TEXTBOX
+921
+86
+1071
+104
+Brown - Rocky\n
+12
+0.0
+1
+
+TEXTBOX
+915
+116
+1065
+134
+Gray - Snow
+12
+0.0
+1
+
+TEXTBOX
+912
+142
+1062
+160
+Sky Blue - Ferns
+12
+0.0
+1
+
+TEXTBOX
+912
+169
+1062
+187
+Lime Green - Grass
+12
+0.0
+1
+
+TEXTBOX
+913
+194
+1063
+212
+Violet - Jungle
+12
+0.0
+1
+
+TEXTBOX
+916
+236
+1066
+254
+Magenta - Swamp
+12
+125.0
+1
+
+SWITCH
 7
-479
-180
-512
-distance_weight
-distance_weight
+434
+118
+467
+debug
+debug
 0
-100
-99
 1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-9
-433
-181
-466
-difficulty_weight
-difficulty_weight
-0
-100
-1
-1
-1
-NIL
-HORIZONTAL
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
