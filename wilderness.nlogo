@@ -6,10 +6,7 @@ patches-own [
   basecolor
 
   ;; Used for A* pathfinding speedups. Rewritten each time an agent tries to find a path.
-  f
-  g
-  h
-  parent-patch
+  f g h parent-patch
 ]
 
 turtles-own [destpatch current-path last_pathupdate]
@@ -26,12 +23,12 @@ to setup
   ; When walked on, the integrity deteriorates to (hardness * integrity)
   ; The difficulty is difficulty-mult * integrity
   set biome-list (list
-    (list 0.85 20 50) ; Forest. Green.
-    (list 0.95 10 30) ; Rocky. Brown.
-    (list 0.40 40 0) ; Snow. Grayscale.
-    (list 0.50 14 90) ; Fern. Sky Blue.
-    (list 0.85 30 110) ; Jungle. Violet.
-    (list 0.70 36 120) ; Swamp. Magenta
+    (list 0.85 5 50) ; Forest. Green.
+    (list 0.95 2 30) ; Rocky. Brown.
+    (list 0.40 15 0) ; Snow. Grayscale.
+    (list 0.50 4 90) ; Fern. Sky Blue.
+    (list 0.85 10 110) ; Jungle. Violet.
+    (list 0.70 12 120) ; Swamp. Magenta
   )
 
   makemap ; Make Terrain
@@ -114,12 +111,13 @@ to move_phase
   ask turtles [
       ; Make the turtle move along its path
       if length current-path != 0 [
-          face first current-path
-          move-to first current-path
+          let next first current-path
           set current-path remove-item 0 current-path
+          face next
+          move-to next
       ]
 
-      if last_pathupdate > route_update_frequency [
+      if last_pathupdate > sight_radius [
         set current-path astar patch-here destpatch
         set last_pathupdate 0
       ]
@@ -139,6 +137,7 @@ to-report astar [ source-patch destination-patch]
   let current-patch 0
   let open []
   let closed []
+  let curDist distance destination-patch
 
   ; add source patch in the open list
   set open lput source-patch open
@@ -170,7 +169,7 @@ to-report astar [ source-patch destination-patch]
         [ set search-done? true ]
         [
           ; the neighbors should not be obstacles or already explored patches (part of the closed list)
-          ask neighbors4 with [ (not member? self closed) and (self != parent-patch) ]
+          ask neighbors4 with [ (not member? self closed) and (self != parent-patch) and (distance destination-patch < (curDist + max_backtrack)) ]
           [
             ; the neighbors to be explored should also not be the source or
             ; destination patches or already a part of the open list (unexplored patches list)
@@ -181,10 +180,11 @@ to-report astar [ source-patch destination-patch]
 
               ; update the path finding variables of the eligible patch
               set parent-patch current-patch
+              let dist distance source-patch
               set g ([g] of parent-patch)
 
               ; Consider path difficulty only for patches in sight radius.
-              if(distance source-patch < sight_radius)
+              if(dist < sight_radius)
               [
                  if debug [set pcolor red]
                  set g (g + difficulty)
@@ -256,7 +256,7 @@ to updatemap
   ask patches [
     let addedColor ((1 - integrity) * 6 + 1) ; Max integrity = black.
     set pcolor basecolor + addedColor
-    set difficulty int (1 / hardness) * integrity
+    set difficulty hardness * integrity
     set f 0
     set g 0
     set h 0
@@ -555,7 +555,7 @@ SWITCH
 518
 debug
 debug
-1
+0
 1
 -1000
 
@@ -568,7 +568,7 @@ sight_radius
 sight_radius
 1
 128
-16
+29
 1
 1
 NIL
@@ -576,14 +576,14 @@ HORIZONTAL
 
 SLIDER
 11
-439
-224
-472
-route_update_frequency
-route_update_frequency
+443
+223
+476
+max_backtrack
+max_backtrack
 0
-50
-25
+20
+5
 1
 1
 NIL
