@@ -1,6 +1,6 @@
 patches-own [
   difficulty
-  hardness
+  diff_mult
   integrity
   biome
   basecolor
@@ -19,9 +19,9 @@ to setup
   ifelse map_seed != -1
   [ random-seed map_seed ]
   [ random-seed new-seed ]
-  ; list <hardness> <difficulty-mult> <base colour>
-  ; When walked on, the integrity deteriorates to (hardness * integrity)
-  ; The difficulty is difficulty-mult * integrity
+  ; list <deterioration> <diff_mult> <base colour>
+  ; When walked on, the integrity deteriorates to (deterioration * integrity)
+  ; The difficulty is diff_mult * integrity
   set biome-list (list
     (list 0.85 5 50) ; Forest. Green.
     (list 0.95 2 30) ; Rocky. Brown.
@@ -186,7 +186,7 @@ to-report astar [ source-patch destination-patch]
               ; Consider path difficulty only for patches in sight radius.
               if(dist < sight_radius)
               [
-                 if debug [set pcolor red]
+                 if debug [set pcolor cyan]
                  set g (g + difficulty)
               ]
 
@@ -200,7 +200,10 @@ to-report astar [ source-patch destination-patch]
     [
       ; if a path is not found (search is incomplete) and the open list is exhausted
       ; display a user message and report an empty search path list.
-      user-message( "A path from the source to the destination does not exist." )
+      ;user-message( "A path from the source to the destination does not exist." )
+
+      ; The only time we get here is when we are on the destination patch
+      ; In this case, do nothing.
       report []
     ]
   ]
@@ -243,7 +246,7 @@ to makemap
   ask patches [
     set integrity (perlin_noise pxcor pycor) ; Generate the integrity of the patch based on perlin noise.
     set integrity (integrity / max-integrity) ; Make the integrity a float between 0 and 1.
-    set hardness item 1 (item biome biome-list)
+    set diff_mult item 1 (item biome biome-list)
     set biome [biome] of min-one-of points [distance myself] ;; Assign biomes based on voronoi point distance
     set basecolor item 2 (item biome biome-list) ;; Color the biome
   ]
@@ -256,7 +259,7 @@ to updatemap
   ask patches [
     let addedColor ((1 - integrity) * 6 + 1) ; Max integrity = black.
     set pcolor basecolor + addedColor
-    set difficulty hardness * integrity
+    set difficulty diff_mult * integrity
     set f 0
     set g 0
     set h 0
@@ -583,7 +586,7 @@ max_backtrack
 max_backtrack
 0
 20
-5
+0
 1
 1
 NIL
@@ -932,7 +935,7 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.3.1
+NetLogo 5.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
