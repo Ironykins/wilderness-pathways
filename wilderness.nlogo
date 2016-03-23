@@ -11,6 +11,7 @@ patches-own [
   h
   parent-patch
 ]
+
 turtles-own [destpatch current-path last_pathupdate]
 globals [biome-list max-integrity]
 breed [points point]
@@ -25,13 +26,12 @@ to setup
   ; When walked on, the integrity deteriorates to (hardness * integrity)
   ; The difficulty is difficulty-mult * integrity
   set biome-list (list
-    (list 0.85 10 50) ; Forest. Green.
-    (list 0.95 2 30) ; Rocky. Brown.
-    (list 0.40 20 0) ; Snow. Grayscale.
-    (list 0.50 5 90) ; Fern. Sky Blue.
-    (list 0.90 4 60) ; Grass. Lime Green
-    (list 0.85 15 110) ; Jungle. Violet.
-    (list 0.70 18 120) ; Swamp. Magenta
+    (list 0.85 20 50) ; Forest. Green.
+    (list 0.95 10 30) ; Rocky. Brown.
+    (list 0.40 40 0) ; Snow. Grayscale.
+    (list 0.50 14 90) ; Fern. Sky Blue.
+    (list 0.85 30 110) ; Jungle. Violet.
+    (list 0.70 36 120) ; Swamp. Magenta
   )
 
   makemap ; Make Terrain
@@ -243,7 +243,7 @@ to makemap
   ask patches [
     set integrity (perlin_noise pxcor pycor) ; Generate the integrity of the patch based on perlin noise.
     set integrity (integrity / max-integrity) ; Make the integrity a float between 0 and 1.
-    set hardness 1
+    set hardness item 1 (item biome biome-list)
     set biome [biome] of min-one-of points [distance myself] ;; Assign biomes based on voronoi point distance
     set basecolor item 2 (item biome biome-list) ;; Color the biome
   ]
@@ -529,20 +529,10 @@ Sky Blue - Ferns
 1
 
 TEXTBOX
-904
-86
-1054
-104
-Lime Green - Grass
-12
-65.0
-1
-
-TEXTBOX
 903
-103
+88
 1053
-121
+106
 Violet - Jungle
 12
 115.0
@@ -550,9 +540,9 @@ Violet - Jungle
 
 TEXTBOX
 904
-120
+105
 1054
-138
+123
 Magenta - Swamp
 12
 125.0
@@ -565,7 +555,7 @@ SWITCH
 518
 debug
 debug
-0
+1
 1
 -1000
 
@@ -578,7 +568,7 @@ sight_radius
 sight_radius
 1
 128
-6
+16
 1
 1
 NIL
