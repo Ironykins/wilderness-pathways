@@ -143,6 +143,8 @@ to-report astar [ source-patch destination-patch]
   ; add source patch in the open list
   set open lput source-patch open
 
+  if debug [ ask destination-patch [set pcolor green]]
+
   ; loop until we reach the destination or the open list becomes empty
   while [ search-done? != true]
   [
@@ -168,7 +170,7 @@ to-report astar [ source-patch destination-patch]
         [ set search-done? true ]
         [
           ; the neighbors should not be obstacles or already explored patches (part of the closed list)
-          ask neighbors4 with [ pcolor != white and (not member? self closed) and (self != parent-patch) ]
+          ask neighbors4 with [ (not member? self closed) and (self != parent-patch) ]
           [
             ; the neighbors to be explored should also not be the source or
             ; destination patches or already a part of the open list (unexplored patches list)
@@ -183,8 +185,10 @@ to-report astar [ source-patch destination-patch]
 
               ; Consider path difficulty only for patches in sight radius.
               if(distance source-patch < sight_radius)
-              [ set g g + difficulty ]
-
+              [
+                 if debug [set pcolor red]
+                 set g (g + difficulty)
+              ]
 
               set h distance destination-patch
               set f (g + h)
@@ -440,10 +444,10 @@ Enter -1 for a random seed
 1
 
 SLIDER
-19
-306
-191
-339
+12
+288
+224
+321
 max_turtles
 max_turtles
 0
@@ -455,25 +459,25 @@ NIL
 HORIZONTAL
 
 SLIDER
-3
-347
-222
-380
+11
+324
+223
+357
 spawn_frequency
 spawn_frequency
 0
 100
-100
+20
 1
 1
 ticks
 HORIZONTAL
 
 SLIDER
-6
-393
-211
-426
+11
+362
+223
+395
 deterioration_rate
 deterioration_rate
 0
@@ -485,70 +489,70 @@ NIL
 HORIZONTAL
 
 TEXTBOX
-918
-59
-1068
-77
+902
+17
+1052
+35
 Green - Forest
 12
-0.0
+55.0
 1
 
 TEXTBOX
-921
-86
-1071
-104
+903
+34
+1053
+52
 Brown - Rocky\n
 12
-0.0
+35.0
 1
 
 TEXTBOX
-915
-116
-1065
-134
+903
+51
+1053
+69
 Gray - Snow
 12
-0.0
+5.0
 1
 
 TEXTBOX
-912
-142
-1062
-160
+904
+68
+1054
+86
 Sky Blue - Ferns
 12
-0.0
+95.0
 1
 
 TEXTBOX
-912
-169
-1062
-187
+904
+86
+1054
+104
 Lime Green - Grass
 12
-0.0
+65.0
 1
 
 TEXTBOX
-913
-194
-1063
-212
+903
+103
+1053
+121
 Violet - Jungle
 12
-0.0
+115.0
 1
 
 TEXTBOX
-916
-236
-1066
-254
+904
+120
+1054
+138
 Magenta - Swamp
 12
 125.0
@@ -556,35 +560,35 @@ Magenta - Swamp
 
 SWITCH
 12
-573
+485
 123
-606
+518
 debug
 debug
-1
+0
 1
 -1000
 
 SLIDER
-7
-439
-179
-472
+11
+401
+223
+434
 sight_radius
 sight_radius
 1
 128
-60
+6
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-3
-488
-227
-521
+11
+439
+224
+472
 route_update_frequency
 route_update_frequency
 0
@@ -938,7 +942,7 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.3
+NetLogo 5.3.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
