@@ -10,15 +10,18 @@ patches-own [
 ]
 
 turtles-own [destpatch current-path last_pathupdate]
-globals [biome-list max-integrity]
+globals [biome-list max-integrity seed]
 breed [points point]
 
 to setup
   clear-all
   reset-ticks
   ifelse map_seed != -1
-  [ random-seed map_seed ]
-  [ random-seed new-seed ]
+  [ set seed map_seed]
+  [ set seed new-seed ]
+
+  random-seed seed
+
   ; list <deterioration> <diff_mult> <base colour>
   ; When walked on, the integrity deteriorates to (deterioration * integrity)
   ; The difficulty is diff_mult * integrity
@@ -302,7 +305,7 @@ end
 ; But netlogo doesn't seem to have native bitwise operators.
 ; Generates values in the range (0.0, 1.0)
 to-report basic_noise [x y]
-  let n (x * 500 + y * 57) + map_seed
+  let n (x * 7 + y * 57) + seed
   random-seed n
   report random-float 1
 end
