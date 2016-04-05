@@ -5,11 +5,10 @@ patches-own [
   biome
   basecolor
   f g h parent-patch ; Used for A* pathfinding speedups. Rewritten each time an agent tries to find a path.
-  basenoise smoothnoise ; For Memoization of perlin noise.
 ]
 
 turtles-own [destpatch current-path last_pathupdate]
-globals [biome-list max-integrity seed]
+globals [biome-list max-integrity seed mem_smoothnoise]
 breed [points point]
 
 to setup
@@ -32,7 +31,6 @@ to setup
     (list 0.85 10 110) ; Jungle. Violet.
     (list 0.70 12 120) ; Swamp. Magenta
   )
-
   makemap ; Make Terrain
   clear-turtles ; Remove the turtles used for biome generation.
 end
@@ -247,8 +245,6 @@ to makemap
   ask n-of biome_count patches [ sprout-points 1 [ set biome random (length biome-list) ] ]
 
   ask patches [
-    set basenoise -1 ; -1 = "no value"
-    set smoothnoise -1
     set integrity (perlin_noise pxcor pycor) ; Generate the integrity of the patch based on perlin noise.
     set integrity (integrity / max-integrity) ; Make the integrity a float between 0 and 1.
     set diff_mult item 1 (item biome biome-list)
@@ -290,7 +286,6 @@ to-report perlin_noise [x y]
     set i (i + 1)
 
     set total total + (interpolated_noise (x * freq) (y * freq)) * amp
-    set basenoise total
   ]
 
   ; Keep track of what our maximum integrity is.
@@ -314,18 +309,19 @@ to-report basic_noise [x y]
 end
 
 ; Smoothed noise. Used pre-interpolation
-; Called in a patch context
-to-report smooth_noise
-  if smoothnoise = -1
-  [ set smoothnoise (basic_noise pxcor pycor) ]
-  report smoothnoise
+to-report smooth_noise [x y]
+  let corners ( basic_noise (x - 1) (y - 1) + basic_noise(x + 1) (y - 1) + basic_noise(x - 1) (y + 1) + basic_noise(x + 1) (y + 1) ) / 16
+  let sides  ( basic_noise (x - 1) (y)  + basic_noise (x + 1) (y) + basic_noise (x) (y - 1) + basic_noise (x) (y + 1) ) /  8
+  let center  (basic_noise x y) / 4
+  report corners + sides + center
+;  report (basic_noise x y)
 end
 
 to-report interpolated_noise [x y]
-  let v1 (smooth_noise)
-  let v2 ([smooth_noise] of patch-at 1 0)
-  let v3 ([smooth_noise] of patch-at 0 1)
-  let v4 ([smooth_noise] of patch-at 1 1)
+  let v1 (smooth_noise x y)
+  let v2 (smooth_noise (x + 1) y)
+  let v3 (smooth_noise x (y + 1))
+  let v4 (smooth_noise (x + 1) (y + 1))
 
   let i1 lerp v1 v2 0.5
   let i2 lerp v3 v4 0.5
