@@ -248,9 +248,10 @@ to makemap
 
   ;; First, setup memoization arrays.
   ask patches [
-
     set msmoothnoise []
     repeat map_noise_octaves [set msmoothnoise lput -1 msmoothnoise]
+    set mbasicnoise []
+    repeat map_noise_octaves [set mbasicnoise lput -1 mbasicnoise]
   ]
 
   ask patches [
@@ -312,9 +313,23 @@ end
 ; But netlogo doesn't seem to have native bitwise operators.
 ; Generates values in the range (0.0, 1.0)
 to-report basic_noise [x y freq i]
-  let n (x * freq * 7 + y * freq * 57) + seed
-  random-seed n
-  report random-float 1
+  if patch x y = nobody
+  [
+    let n (x * freq * 7 + y * freq * 57) + seed
+    random-seed n
+    report random-float 1
+  ]
+
+  let memnoise [ item i mbasicnoise ] of patch x y
+  ifelse memnoise != -1 [ report memnoise ]
+  [
+    let n (x * freq * 7 + y * freq * 57) + seed
+    random-seed n
+    let total random-float 1
+    ask patch x y [ set mbasicnoise replace-item i mbasicnoise total]
+    report total
+  ]
+
 end
 
 ; Smoothed noise. Used pre-interpolation
