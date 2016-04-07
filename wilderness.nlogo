@@ -26,12 +26,12 @@ to setup
   ; When walked on, the integrity deteriorates to (deterioration * integrity)
   ; The difficulty is diff_mult * integrity
   set biome-list (list
-    (list 0.85 5 50) ; Forest. Green.
-    (list 0.95 2 30) ; Rocky. Brown.
-    (list 0.40 15 0) ; Snow. Grayscale.
-    (list 0.50 4 90) ; Fern. Sky Blue.
-    (list 0.85 10 110) ; Jungle. Violet.
-    (list 0.70 12 120) ; Swamp. Magenta
+    (list 0.85 40 50) ; Forest. Green.
+    (list 0.95 16 30) ; Rocky. Brown.
+    (list 0.40 120 0) ; Snow. Grayscale.
+    (list 0.60 32 90) ; Fern. Sky Blue.
+    (list 0.85 80 110) ; Jungle. Violet.
+    (list 0.70 96 120) ; Swamp. Magenta
   )
   makemap ; Make Terrain
   clear-turtles ; Remove the turtles used for biome generation.
@@ -119,7 +119,7 @@ to move_phase
           move-to next
       ]
 
-      if last_pathupdate > sight_radius [
+      if last_pathupdate > path_recalc_interval [
         set current-path astar patch-here destpatch
         set last_pathupdate 0
       ]
@@ -167,11 +167,11 @@ to-report astar [ source-patch destination-patch]
       ask current-patch
       [
         ; if any of the neighbors is the destination stop the search process
-        ifelse any? neighbors4 with [ (pxcor = [ pxcor ] of destination-patch) and (pycor = [pycor] of destination-patch)]
+        ifelse any? neighbors with [ (pxcor = [ pxcor ] of destination-patch) and (pycor = [pycor] of destination-patch)]
         [ set search-done? true ]
         [
           ; the neighbors should not be obstacles or already explored patches (part of the closed list)
-          ask neighbors4 with [ (not member? self closed) and (self != parent-patch) and (distance destination-patch < (curDist + max_backtrack)) ]
+          ask neighbors with [ (not member? self closed) and (self != parent-patch) and (distance destination-patch < (curDist + max_backtrack)) ]
           [
             ; the neighbors to be explored should also not be the source or
             ; destination patches or already a part of the open list (unexplored patches list)
@@ -290,7 +290,7 @@ to-report perlin_noise [x y]
   let total 0
   let i 0
 
-  repeat map_noise_octaves - 1 [
+  repeat map_noise_octaves [
     let freq 2 ^ i
     let amp map_noise_persistence ^ i
 
@@ -381,8 +381,8 @@ GRAPHICS-WINDOW
 64
 -64
 64
-0
-0
+1
+1
 1
 ticks
 30.0
@@ -430,7 +430,7 @@ biome_count
 biome_count
 1
 40
-20
+31
 1
 1
 NIL
@@ -456,7 +456,7 @@ map_noise_octaves
 map_noise_octaves
 1
 10
-5
+1
 1
 1
 NIL
@@ -471,7 +471,7 @@ map_noise_persistence
 map_noise_persistence
 0
 1
-0.1
+0.2
 0.1
 1
 NIL
@@ -593,13 +593,13 @@ Magenta - Swamp
 1
 
 SWITCH
-12
-485
-123
-518
+13
+519
+124
+552
 debug
 debug
-0
+1
 1
 -1000
 
@@ -619,15 +619,30 @@ NIL
 HORIZONTAL
 
 SLIDER
-11
-443
-223
-476
+12
+477
+224
+510
 max_backtrack
 max_backtrack
 0
 20
 0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+11
+438
+224
+471
+path_recalc_interval
+path_recalc_interval
+1
+128
+10
 1
 1
 NIL
