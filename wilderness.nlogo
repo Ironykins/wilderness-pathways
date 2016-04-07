@@ -5,6 +5,8 @@ patches-own [
   biome
   basecolor
   f g h parent-patch ; Used for A* pathfinding speedups. Rewritten each time an agent tries to find a path.
+  msmoothnoise
+  mbasicnoise
 ]
 
 turtles-own [destpatch current-path last_pathupdate]
@@ -244,6 +246,13 @@ to makemap
   ;; More info: http://ccl.northwestern.edu/netlogo/models/Voronoi
   ask n-of biome_count patches [ sprout-points 1 [ set biome random (length biome-list) ] ]
 
+  ;; First, setup memoization arrays.
+  ask patches [
+
+    set msmoothnoise []
+    repeat map_noise_octaves [set msmoothnoise lput -1 msmoothnoise]
+  ]
+
   ask patches [
     set integrity (perlin_noise pxcor pycor) ; Generate the integrity of the patch based on perlin noise.
     set integrity (integrity / max-integrity) ; Make the integrity a float between 0 and 1.
@@ -283,9 +292,9 @@ to-report perlin_noise [x y]
   repeat map_noise_octaves - 1 [
     let freq 2 ^ i
     let amp map_noise_persistence ^ i
-    set i (i + 1)
 
-    set total total + (interpolated_noise (x * freq) (y * freq)) * amp
+    set total total + (interpolated_noise x y freq i) * amp
+    set i (i + 1)
   ]
 
   ; Keep track of what our maximum integrity is.
@@ -302,26 +311,33 @@ end
 ; A basic noise generation function. This could be better
 ; But netlogo doesn't seem to have native bitwise operators.
 ; Generates values in the range (0.0, 1.0)
-to-report basic_noise [x y]
-  let n (x * 7 + y * 57) + seed
+to-report basic_noise [x y freq i]
+  let n (x * freq * 7 + y * freq * 57) + seed
   random-seed n
   report random-float 1
 end
 
 ; Smoothed noise. Used pre-interpolation
-to-report smooth_noise [x y]
-  let corners ( basic_noise (x - 1) (y - 1) + basic_noise(x + 1) (y - 1) + basic_noise(x - 1) (y + 1) + basic_noise(x + 1) (y + 1) ) / 16
-  let sides  ( basic_noise (x - 1) (y)  + basic_noise (x + 1) (y) + basic_noise (x) (y - 1) + basic_noise (x) (y + 1) ) /  8
-  let center  (basic_noise x y) / 4
-  report corners + sides + center
-;  report (basic_noise x y)
+to-report smooth_noise [x y freq i]
+  if patch x y = nobody [report 0.5] ; Don't bother computing noise for out of bounds patches.
+  let memnoise [ item i msmoothnoise ] of patch x y
+
+  ifelse memnoise != -1 [ report memnoise ]
+  [
+    let corners ( basic_noise (x - 1) (y - 1) freq i + basic_noise(x + 1) (y - 1) freq i + basic_noise(x - 1) (y + 1) freq i + basic_noise(x + 1) (y + 1) freq i ) / 16
+    let sides  ( basic_noise (x - 1) (y) freq i  + basic_noise (x + 1) (y) freq i + basic_noise (x) (y - 1) freq i + basic_noise (x) (y + 1) freq i ) /  8
+    let center  (basic_noise x y freq i) / 4
+    let total corners + sides + center
+    ask patch x y [ set msmoothnoise replace-item i msmoothnoise total]
+    report total
+  ]
 end
 
-to-report interpolated_noise [x y]
-  let v1 (smooth_noise x y)
-  let v2 (smooth_noise (x + 1) y)
-  let v3 (smooth_noise x (y + 1))
-  let v4 (smooth_noise (x + 1) (y + 1))
+to-report interpolated_noise [x y freq i]
+  let v1 (smooth_noise x y freq i)
+  let v2 (smooth_noise (x + 1) y freq i)
+  let v3 (smooth_noise x (y + 1) freq i)
+  let v4 (smooth_noise (x + 1) (y + 1) freq i)
 
   let i1 lerp v1 v2 0.5
   let i2 lerp v3 v4 0.5
