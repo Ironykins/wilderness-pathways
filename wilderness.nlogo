@@ -666,10 +666,10 @@ count turtles
 11
 
 PLOT
-901
-186
-1242
-402
+903
+184
+1244
+400
 Travel Distance
 Agent
 Distance
@@ -681,13 +681,13 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "if update_trip_plot = true [\nplot lasttrip\nset update_trip_plot false\n]"
+"default" 1.0 0 -16777216 true "" "if update_trip_plot = true [\nplot lasttrip\n]"
 
 PLOT
-899
-459
-1242
-684
+903
+409
+1244
+634
 Average Travel Distance
 NIL
 NIL
