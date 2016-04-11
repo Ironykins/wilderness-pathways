@@ -9,8 +9,8 @@ patches-own [
   mbasicnoise
 ]
 
-turtles-own [destpatch current-path last_pathupdate]
-globals [biome-list max-integrity seed mem_smoothnoise]
+turtles-own [destpatch current-path last_pathupdate traveled]
+globals [biome-list max-integrity seed mem_smoothnoise lasttrip update_trip_plot numtrips totaldist]
 breed [points point]
 
 to setup
@@ -19,6 +19,7 @@ to setup
   ifelse map_seed != -1
   [ set seed map_seed]
   [ set seed new-seed ]
+  set update_trip_plot false
 
   random-seed seed
 
@@ -38,6 +39,7 @@ to setup
 end
 
 to go
+  set update_trip_plot false
   ;then we spawn turtles
   spawn_phase
   ;then turtles make their move
@@ -46,7 +48,6 @@ to go
   deterioration_phase
   ;Finally, we update the map
   updatemap
-
   display
   tick
 end
@@ -61,7 +62,13 @@ to deterioration_phase
     ]
 
     ;; Kill turtles who have gotten to their destination
-    if patch-here = destpatch [die]
+    if patch-here = destpatch [
+      set lasttrip traveled
+      set update_trip_plot true
+      set totaldist totaldist + lasttrip
+      set numtrips numtrips + 1
+      die
+    ]
   ]
 end
 
@@ -117,6 +124,7 @@ to move_phase
           set current-path remove-item 0 current-path
           face next
           move-to next
+          set traveled traveled + [difficulty] of next
       ]
 
       if last_pathupdate > path_recalc_interval [
@@ -167,11 +175,11 @@ to-report astar [ source-patch destination-patch]
       ask current-patch
       [
         ; if any of the neighbors is the destination stop the search process
-        ifelse any? neighbors with [ (pxcor = [ pxcor ] of destination-patch) and (pycor = [pycor] of destination-patch)]
+        ifelse any? neighbors4 with [ (pxcor = [ pxcor ] of destination-patch) and (pycor = [pycor] of destination-patch)]
         [ set search-done? true ]
         [
           ; the neighbors should not be obstacles or already explored patches (part of the closed list)
-          ask neighbors with [ (not member? self closed) and (self != parent-patch) and (distance destination-patch < (curDist + max_backtrack)) ]
+          ask neighbors4 with [ (not member? self closed) and (self != parent-patch) and (distance destination-patch < (curDist + max_backtrack)) ]
           [
             ; the neighbors to be explored should also not be the source or
             ; destination patches or already a part of the open list (unexplored patches list)
@@ -191,7 +199,6 @@ to-report astar [ source-patch destination-patch]
                  if debug [set pcolor cyan]
                  set g (g + difficulty)
               ]
-
 
               set h distance destination-patch
               set f (g + h)
@@ -329,7 +336,6 @@ to-report basic_noise [x y freq i]
     ask patch x y [ set mbasicnoise replace-item i mbasicnoise total]
     report total
   ]
-
 end
 
 ; Smoothed noise. Used pre-interpolation
@@ -381,8 +387,8 @@ GRAPHICS-WINDOW
 64
 -64
 64
-1
-1
+0
+0
 1
 ticks
 30.0
@@ -599,7 +605,7 @@ SWITCH
 552
 debug
 debug
-1
+0
 1
 -1000
 
@@ -642,11 +648,69 @@ path_recalc_interval
 path_recalc_interval
 1
 128
-10
+30
 1
 1
 NIL
 HORIZONTAL
+
+MONITOR
+902
+132
+1034
+177
+Number of Agents
+count turtles
+17
+1
+11
+
+PLOT
+901
+186
+1242
+402
+Travel Distance
+Agent
+Distance
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "if update_trip_plot = true [\nplot lasttrip\nset update_trip_plot false\n]"
+
+PLOT
+899
+459
+1242
+684
+Average Travel Distance
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "if update_trip_plot = true [\nplot totaldist / numtrips\n]"
+
+MONITOR
+1047
+132
+1242
+177
+Number of Completed Trips
+numtrips
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
