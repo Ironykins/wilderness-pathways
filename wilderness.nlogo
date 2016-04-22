@@ -58,7 +58,7 @@ to deterioration_phase
     ;; Reduce the integrity of patches being stepped on
     ask patch-here [
       let multRate item 0 (item biome (biome-list))
-      set integrity (deterioration_rate * multRate) * integrity
+      set integrity multRate * integrity
     ]
 
     ;; Kill turtles who have gotten to their destination
@@ -208,11 +208,7 @@ to-report astar [ source-patch destination-patch]
       ]
     ]
     [
-      ; if a path is not found (search is incomplete) and the open list is exhausted
-      ; display a user message and report an empty search path list.
-      ;user-message( "A path from the source to the destination does not exist." )
-
-      ; The only time we get here is when we are on the destination patch
+      ; The only time we get here is when we are on the destination patch, since we have no impassable obstacles.
       ; In this case, do nothing.
       report []
     ]
@@ -288,7 +284,6 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Code for Perlin Noise Generation
 ; http://freespace.virgin.net/hugo.elias/models/m_perlin.htm
-; TODO: This is held back by being slow. The noise at points x,y should be somehow memoized.
 
 ; Generates the integrity values of all patches.
 ; Uses perlin noise to generate.
@@ -523,21 +518,6 @@ spawn_frequency
 ticks
 HORIZONTAL
 
-SLIDER
-11
-362
-223
-395
-deterioration_rate
-deterioration_rate
-0
-1
-1
-.01
-1
-NIL
-HORIZONTAL
-
 TEXTBOX
 902
 17
@@ -600,9 +580,9 @@ Magenta - Swamp
 
 SWITCH
 13
-519
+482
 124
-552
+515
 debug
 debug
 0
@@ -611,9 +591,9 @@ debug
 
 SLIDER
 11
-401
+364
 223
-434
+397
 sight_radius
 sight_radius
 1
@@ -626,9 +606,9 @@ HORIZONTAL
 
 SLIDER
 12
-477
+440
 224
-510
+473
 max_backtrack
 max_backtrack
 0
@@ -641,9 +621,9 @@ HORIZONTAL
 
 SLIDER
 11
-438
+401
 224
-471
+434
 path_recalc_interval
 path_recalc_interval
 1
@@ -715,39 +695,70 @@ numtrips
 @#$#@#$#@
 ## WHAT IS IT?
 
-(a general understanding of what the model is trying to show or explain)
+This model simulates the generation of wilderness terrain, as well as the destructive movement of agents through this terrain. This creates pathways through the terrain that other agents are more likely to use.
 
 ## HOW IT WORKS
 
-(what rules the agents use to create the overall behavior of the model)
+Terrain is generated through a mix of Perlin noise and Voronoi tesselation. The Voronoi tessellation decides the biome of the tile, which dictates the difficulty of moving through the tile, as well as the resistance of the tile to being trampled. The perlin noise governs the integrity of the tile, which is a measure of how trampled the tile has become. For example, a snow tile with high integrity can be thought of as deep snow, where it is very difficult to navigate, but rapidly becomes very easy to navigate as agents pass through it.
+
+Each type of biome has a difficulty multiplier, and the actual difficult of a tile is given by
+
+	difficulty = integrity * diff_mult
+
+Each type of biome also has a deterioration value. When an agent steps on the patch, its integrity is set according to:
+
+	integrity = old_integrity * deterioration_value
+
+When agents are spawned in, they appear on one edge of the simulation, and are given a random destination point on another edge of it. They attempt to traverse the terrain to get to their destination, after which point they leave the simulation.
 
 ## HOW TO USE IT
 
-(how to use the model, including a description of each of the items in the Interface tab)
+Clicking 'setup' will generate a new map based on the supplied map seed. If the seed is set to -1, then a random seed will be used. biome_count sets the number of points used for Voronoi tessellation, and consequently the number of biomes in the simulation. map_noise_octaves governs the number of successive noise functions that are added together to create the final perlin noise. map_noise_persistence specifics the amplitude of each octave of noise.
+
+Clicking 'go' will run the simulation continually, auto-advancing the simulation clock, spawning agents, and moving them through the simulation.
+
+max_turtles governs the maximum number of agents allowed to move around the simulation at a single time. If this many agents are present in the simulation, no new agents will spawn.
+
+spawn_frequency sets the number of ticks between the creation of each new agent.
+
+sight_radius sets the sight range of the agents. Tiles within the sight range of an agent will have their difficulty taken into account when the agent is computing a new path. Tiles outside this radius will be assumed uniformly easy, as the agent does not make any assumption about them.
+
+path_recalc_interval sets the frequency at which agents re-compute their paths. Generally, it is good to set this less than or equal to their sight radius, otherwise agents will continue blindly through their terrain and take sub-optimal paths.
+
+max_backtrack sets the maximum number of backwards spaces that an agent can consider moving to. If this is set to zero, agents will move towards their destination with every step. Use caution with this, as agents do not have memory of where they have been, and so if a large amount of backtracking is allowed, agents may end up going in circles trying to find a better way around a difficult obstacle.
+
+Finally, the debug flag allows the user to see a visualization of the A* pathfinding algorithm used by the agents. With this flag enabled, every time an agent recomputes their path, the tiles in the agent's sight range are outlined in light blue.
+
 
 ## THINGS TO NOTICE
 
-(suggested things for the user to notice while running the model)
+Under default settings, the simulation matures fairly fast, and creates an interesting network of paths that seems to stabilize after a while. Once the network of paths is mature, agents rarely deviate from them.
+
+Further, on the initial undeveloped map, pathfinding is a very slow and expensive process, even with a small sight radius. As the path network gets more mature, pathfinding becomes very fast. The implication of this is that not only do these path networks reduce the travel time of the agents, they also make travel simpler for agents.
 
 ## THINGS TO TRY
 
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
+Generating the map based on a seed does not affect the randomness of how agents spawn through the terrain. Try running the simulation on the same map multiple times, and seeing how the emergent network of paths differs based on the paths that the early members take.
 
 ## EXTENDING THE MODEL
 
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
+Adding elevation maps to the terrain generation and allowing it to govern the sight radius of agents could produce interesting changes in generated maps.
 
-## NETLOGO FEATURES
-
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
+Currently, agents do not communicate. If agents could communicate using pheromones, in a manner similar to ants, then could this change the development of pathway networks? Or at least quicken the formation of mature networks?
 
 ## RELATED MODELS
 
-(models in the NetLogo Models Library and elsewhere which are of related interest)
+The Voronoi tessellation model packaged with netlogo, under models/mathematics, is the code that I used for voronoi tessellation in this model.
 
 ## CREDITS AND REFERENCES
 
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+Perlin Noise Generation adapted from code written by Hugo Elias:
+http://freespace.virgin.net/hugo.elias/models/m_perlin.htm
+
+NetLogo A* pathfinding adapted from code written by Meghendra Singh:
+http://ccl.northwestern.edu/netlogo/models/community/Astardemo1
+
+Voronoi Tessellation code written by Uri Wilensky, and can be found in the Mathematics/Voronoi model included with netlogo.
 @#$#@#$#@
 default
 true
@@ -1055,7 +1066,7 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.3
+NetLogo 5.3.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
