@@ -175,11 +175,11 @@ to-report astar [ source-patch destination-patch]
       ask current-patch
       [
         ; if any of the neighbors is the destination stop the search process
-        ifelse any? neighbors with [ (pxcor = [ pxcor ] of destination-patch) and (pycor = [pycor] of destination-patch)]
+        ifelse any? neighbors4 with [ (pxcor = [ pxcor ] of destination-patch) and (pycor = [pycor] of destination-patch)]
         [ set search-done? true ]
         [
           ; the neighbors should not be obstacles or already explored patches (part of the closed list)
-          ask neighbors with [ (not member? self closed) and (self != parent-patch) and (distance destination-patch < (curDist + max_backtrack)) ]
+          ask neighbors4 with [ (not member? self closed) and (self != parent-patch) and (distance destination-patch < (curDist + max_backtrack)) ]
           [
             ; the neighbors to be explored should also not be the source or
             ; destination patches or already a part of the open list (unexplored patches list)
