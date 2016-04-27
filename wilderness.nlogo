@@ -2,6 +2,7 @@ patches-own [
   difficulty
   diff_mult
   integrity
+  initial_integrity
   biome
   basecolor
   f g h parent-patch ; Used for A* pathfinding speedups. Rewritten each time an agent tries to find a path.
@@ -260,6 +261,7 @@ to makemap
   ask patches [
     set integrity (perlin_noise pxcor pycor) ; Generate the integrity of the patch based on perlin noise.
     set integrity (integrity / max-integrity) ; Make the integrity a float between 0 and 1.
+    set initial_integrity integrity
     set diff_mult item 1 (item biome biome-list)
     set biome [biome] of min-one-of points [distance myself] ;; Assign biomes based on voronoi point distance
     set basecolor item 2 (item biome biome-list) ;; Color the biome
@@ -271,6 +273,8 @@ end
 ; Updates the map colours based on their difficulty.
 to updatemap
   ask patches [
+    set integrity integrity + ((1 - integrity) * terrain_regrowth)
+    if integrity > initial_integrity [ set integrity initial_integrity ]
     let addedColor ((1 - integrity) * 6 + 1) ; Max integrity = black.
     set pcolor basecolor + addedColor
     set difficulty diff_mult * integrity
@@ -382,8 +386,8 @@ GRAPHICS-WINDOW
 64
 -64
 64
-0
-0
+1
+1
 1
 ticks
 30.0
@@ -443,7 +447,7 @@ INPUTBOX
 181
 262
 map_seed
--1
+10
 1
 0
 Number
@@ -580,12 +584,12 @@ Magenta - Swamp
 
 SWITCH
 13
-482
+518
 124
-515
+551
 debug
 debug
-0
+1
 1
 -1000
 
@@ -692,6 +696,21 @@ numtrips
 1
 11
 
+SLIDER
+12
+478
+224
+511
+terrain_regrowth
+terrain_regrowth
+0
+0.02
+0.001
+0.001
+1
+NIL
+HORIZONTAL
+
 @#$#@#$#@
 ## WHAT IS IT?
 
@@ -726,6 +745,8 @@ sight_radius sets the sight range of the agents. Tiles within the sight range of
 path_recalc_interval sets the frequency at which agents re-compute their paths. Generally, it is good to set this less than or equal to their sight radius, otherwise agents will continue blindly through their terrain and take sub-optimal paths.
 
 max_backtrack sets the maximum number of backwards spaces that an agent can consider moving to. If this is set to zero, agents will move towards their destination with every step. Use caution with this, as agents do not have memory of where they have been, and so if a large amount of backtracking is allowed, agents may end up going in circles trying to find a better way around a difficult obstacle.
+
+terrain_regrowth sets the factor by which terrain regrows each tick. Every time step, integrity = integrity * ((1-integrity) * terrain_regrowth)
 
 Finally, the debug flag allows the user to see a visualization of the A* pathfinding algorithm used by the agents. With this flag enabled, every time an agent recomputes their path, the tiles in the agent's sight range are outlined in light blue.
 
