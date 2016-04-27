@@ -8,6 +8,7 @@ patches-own [
   f g h parent-patch ; Used for A* pathfinding speedups. Rewritten each time an agent tries to find a path.
   msmoothnoise
   mbasicnoise
+  last_trampled
 ]
 
 turtles-own [destpatch current-path last_pathupdate traveled]
@@ -60,6 +61,7 @@ to deterioration_phase
     ask patch-here [
       let multRate item 0 (item biome (biome-list))
       set integrity multRate * integrity
+      set last_trampled ticks
     ]
 
     ;; Kill turtles who have gotten to their destination
@@ -273,8 +275,10 @@ end
 ; Updates the map colours based on their difficulty.
 to updatemap
   ask patches [
-    set integrity integrity + ((1 - integrity) * terrain_regrowth)
-    if integrity > initial_integrity [ set integrity initial_integrity ]
+    if ticks > last_trampled + terrain_regrowth_delay [
+      set integrity integrity + ((1 - integrity) * terrain_regrowth)
+      if integrity > initial_integrity [ set integrity initial_integrity ]
+    ]
     let addedColor ((1 - integrity) * 6 + 1) ; Max integrity = black.
     set pcolor basecolor + addedColor
     set difficulty diff_mult * integrity
@@ -447,7 +451,7 @@ INPUTBOX
 181
 262
 map_seed
-10
+-1
 1
 0
 Number
@@ -584,9 +588,9 @@ Magenta - Swamp
 
 SWITCH
 13
-518
+562
 124
-551
+595
 debug
 debug
 1
@@ -711,6 +715,21 @@ terrain_regrowth
 NIL
 HORIZONTAL
 
+SLIDER
+12
+517
+224
+550
+terrain_regrowth_delay
+terrain_regrowth_delay
+0
+100
+50
+1
+1
+NIL
+HORIZONTAL
+
 @#$#@#$#@
 ## WHAT IS IT?
 
@@ -747,6 +766,8 @@ path_recalc_interval sets the frequency at which agents re-compute their paths. 
 max_backtrack sets the maximum number of backwards spaces that an agent can consider moving to. If this is set to zero, agents will move towards their destination with every step. Use caution with this, as agents do not have memory of where they have been, and so if a large amount of backtracking is allowed, agents may end up going in circles trying to find a better way around a difficult obstacle.
 
 terrain_regrowth sets the factor by which terrain regrows each tick. Every time step, integrity = integrity * ((1-integrity) * terrain_regrowth)
+
+terrain_regrowth_delay sets the number of ticks that a terrain tile waits after being walked on before it starts to regrow itself.
 
 Finally, the debug flag allows the user to see a visualization of the A* pathfinding algorithm used by the agents. With this flag enabled, every time an agent recomputes their path, the tiles in the agent's sight range are outlined in light blue.
 
