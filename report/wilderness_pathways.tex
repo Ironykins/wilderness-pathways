@@ -50,8 +50,8 @@
 % http://www.michaelshell.org/tex/testflow/
 
 
-
 \documentclass[conference]{IEEEtran}
+\usepackage{graphicx}
 % Some Computer Society conferences also require the compsoc mode option,
 % but others use the standard conference format.
 %
@@ -394,7 +394,7 @@ In this project, we will explore the emergent behaviors of destructive agents mo
 	
 	Our simulation models a section of wilderness terrain, through which many different agents move. These agents can represent hikers, all-terrain vehicles, animals, or anything else. Each of these agents has nothing more than a general direction they are traveling, and knowledge of their immediate surroundings. Their goal is to reach their destination through the easiest path they can find. Agents do not have any organization amongst themselves, nor do they communicate directly with one another. Ultimately, the purpose is to see if coherent and complex networks of pathways can emerge from the actions of agents that are not cooperating with one another.
 	
-	Another topic of investigation is how easy traversing the terrain becomes as the path network reaches maturity. A wild wilderness should presumably be a difficult area to move through. Just how much of an effect does an established network of paths have on minimizing this difficulty?
+	Another topic of investigation is how easy traversing the terrain becomes as the path network reaches maturity. A wild wilderness should 	presumably be a difficult area to move through. Just how much of an effect does an established network of paths have on minimizing this difficulty?
 	
 	Also, just what is the effect on the terrain itself when these agents come tearing through, trampling everything in their path? Is the destruction they cause enough to destroy ecosystems, or can a wild wilderness be made traversable without compromising its various ecological balances?
 	
@@ -402,16 +402,64 @@ In this project, we will explore the emergent behaviors of destructive agents mo
 	
 \section{Simulation Overview}
 
-The simulation was written in NetLogo 5.1. It consists of two major parts: the terrain, and the agents. The terrain is a procedurally generated, grid-based map, and agents are small objects that traverse this map.
+The simulation was written in NetLogo 5.1. It consists of two major parts: the terrain, and the agents. The terrain is a procedurally generated, grid-based map, and agents are mobile objects that traverse this map.
 
 \subsection{Terrain Generation}
-Subsection text here.\cite{wolfram:voronoi}
+Terrain is generated through a mix of Perlin noise \cite{wiki:perlin} and Voronoi tessellation \cite{wolfram:voronoi}. The Voronoi tessellation divides the map into a number of regions, each corresponding to a different ‘biome’. This biome dictates the difficulty of moving through the tile, as well as the resistance of the tile to being trampled. The perlin noise governs the initial integrity of the tile, which determines how intact the terrain is, and thus how difficult it is to traverse. For example, a snow tile with high integrity can be thought of as deep snow, which is very difficult to navigate, but rapidly becomes very easy to navigate as agents pass through it.
 
+\begin{figure}[h]
+\includegraphics[scale=0.25]{image/voronoi}
+\includegraphics[scale=0.25]{image/perlin}
+\begin{center}
+\includegraphics[scale=0.25]{image/both}
+\end{center}
+\caption{Map Generation Layers. Voronoi Tessellation (top left) and Perlin Noise (top right) are combined to create our final terrain patch. (Bottom)}
+\end{figure}
+
+Each type of biome has a difficulty multiplier, and the actual difficulty of a tile is given by
+
+\begin{center}
+\verb+difficulty = integrity * diff_mult+
+\end{center}
+
+\newpage
+Each type of biome also has a deterioration value. When an agent steps on the patch, its integrity is set according to:
+
+\begin{center}
+\verb+integrity = old_integrity * det_value+
+\end{center}
+
+A darker colored patch in the simulation has a greater integrity value than a lighter colored patch, so when a path is formed, generally it shows up as a line of white patches surrounded by regular terrain.
+
+See table 1 for an overview of the different terrain types we used in our simulation. 
+
+\begin{table}[h]
+  \begin{center}
+    \begin{tabular}{| l | l | l |}
+    \hline
+    Type & Color & Description \\ \hline \hline
+    Forest & Green & Normal movement. Normal Durability \\ \hline
+	Rock & Brown & Easy to move through. Very durable. \\ \hline
+	Snow & Gray & Difficult to move through. Not durable. \\ \hline
+	Underbrush & Blue & Easy to move through. Not durable.\\ \hline
+	Jungle & Purple & Difficult to move through. Durable. \\ \hline
+	Swamp & Pink & Difficult to move through. Moderately durable. \\ \hline
+    \end{tabular}
+  \end{center}
+\caption{Biome Types}
+\end{table}
 
 \subsection{Agent Behavior}
-Subsection text here.
+Agents are spawned in at fixed intervals. They appear on one edge of the simulation, and are given a random destination point on another edge of it. They attempt to traverse the terrain to get to their destination, at which point they leave the simulation, and their total weighted distance traveled is plotted.
+
+Agents use A* pathfinding with a limited sight radius to decide which path to take through the terrain. Agents can only determine the difficulty of terrain tiles that are within their sight radius, and assume that all tiles beyond their sight radius have equal difficulty. Each tick, an agent takes a step along its pre-computed path, and at fixed intervals, an agent will re-compute its path.
+ 
+As was mentioned above, as agents move across the terrain, they trample that terrain, reducing its integrity and thus its difficulty to pass through for future agents. The destruction of terrain creates paths that other agents are more likely to follow, not because of any inter-agent communication, but because the paths are now easier to traverse. We can analyze the structure of these paths, along with the weighted distance that each agent travels as the path network is developed.
+
 \subsection{Extension: Terrain Regrowth}
-Subsection text here.
+As an extension to the simulation, we implemented a system where, rather than being trampled permanently, terrain can slowly regenerate itself when left alone. Terrain regrows at a user specified rate. This rate scales with the missing integrity of the terrain tile, so regrowth is faster at low integrity, and slower at high integrity. Also, terrain will not regrow for a certain number of ticks after it has been trampled.
+
+We believed that over the long term, this may create a more accurate representation of how paths generate in the wilderness. If agents cease to use a certain path, it can be reclaimed by nature, and so the network of paths can not only grow, it can also shrink.
 
 \section{Results}
 Results goes here.
@@ -561,6 +609,9 @@ The authors would like to thank...
 \bibitem{wolfram:voronoi}
 Weisstein, Eric W. "Voronoi Diagram." From MathWorld--A Wolfram Web Resource. http://mathworld.wolfram.com/VoronoiDiagram.html
 
+\bibitem{wiki:perlin}
+Perlin noise. (2016, March 22). In Wikipedia, The Free Encyclopedia. Retrieved 01:50, April 28, 2016, from \verb+https://en.wikipedia.org/w/index.php?title=Perlin_noise+
+ 
 \end{thebibliography}
 
 
