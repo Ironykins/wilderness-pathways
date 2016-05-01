@@ -470,7 +470,7 @@ Our simulation does in fact produce an emergent network of pathways through the 
 \caption{On the left, an untouched map. On the right, a map with some established pathway networks.}
 \end{figure}
 
-Once an established pathway is found that leads in the same direction as an agent's destination, the agent will walk along it instead of trampling nearby terrain, simply because the trampled section now forms an easier path. By graphing the travel distances of each turtle, and the average trip distance over time, we are able to see a fairly linear decline of difficulty.
+Once an established pathway is found that leads in the same direction as an agent's destination, the agent will walk along it instead of trampling nearby terrain, simply because the trampled section now forms an easier path. By graphing the travel distances of each turtle, and the average trip distance over time, we are able to see a fairly linear decline of difficulty. This means that our simulation had the predicted behavior! The average trip distance is reduced drastically when a mature path network is formed.
 
 \begin{figure}[h]
 \includegraphics[scale=0.5]{image/results3}
@@ -480,7 +480,7 @@ Once an established pathway is found that leads in the same direction as an agen
 \subsection{Simulation Parameters}
 
 \subsubsection{Turtle Spawn Rates and Population Cap}
-The spawning frequency and maximum number of turtles affects the maps formation almost exclusively in the early stages of simulation. Once a network of pathways connects all four edges agents quickly converge to walking across them. Essentially once the pathway has formed these parameters amount to throughput. See figure 4.
+The spawning frequency and maximum number of turtles affects the formation of pathways almost exclusively in the early stages of simulation. Once a network of pathways connects all four edges, agents quickly converge to walking across them, rarely taking shortcuts. (See figures 4 and 5). Once the pathway network has become established, parameters amount to throughput.
 
 \begin{figure}[h]
 \begin{center}
@@ -489,7 +489,7 @@ The spawning frequency and maximum number of turtles affects the maps formation 
 \caption{Spawn Rates and Population Cap}
 \end{figure}
 	
-	In the early stages of the simulation this affects the density of our path network, essentially, how many paths through the center of the network are created. This higher density of paths reduce the average cost of traveling over the map as we create more direct pathways. See figure 5.
+	In the early stages of the simulation this affects the density of our path network, essentially, how many paths through the center of the network are created. This higher density of paths reduce the average cost of traveling over the map as we create more direct pathways.
 	
 \begin{figure}[h]
 \begin{center}
@@ -498,10 +498,8 @@ The spawning frequency and maximum number of turtles affects the maps formation 
 \caption{Alternate path network for the same map.}
 \end{figure}
 
-\subsubsection{Agent Sight parameters: Sight Radius - Backtracking}
-Backtrack is something that never worked as well as we would have liked. We found that by letting agents turn around they were often stuck in two or three patch loops because as they trample the ground it becomes easier to walk on. I think we could remedy this, but we would need to change our movement system to work based on vectors instead of discrete movements. This would allow our agent’s velocity to respond to the difficulty of their terrain, which we could use to determine how fast an agent can turn around or even just stop. 
-
-Sight radius affects how quickly the agents converge to the already built pathway networks. Having a very low sight radius will generate a more dense pathway network, because they will not be able to find paths that are far apart. With a sight radius of 1, agents just move to the square closer to the destination with lower difficulty. This just tramples the entire map. (See figure 6.)
+\subsubsection{Sight Radius and Backtracking}
+Sight radius affects how quickly the agents converge to the already built pathway networks. Having a very low sight radius will generate a more dense pathway network, because they will not be able to find paths that are far apart. As a result, they will go 'bushwhacking' a lot more. With a sight radius of 1, agents essentially move directly towards their destination. This just tramples the entire map. (See figure 6)
 
 \begin{figure}[h]
 \begin{center}
@@ -510,26 +508,28 @@ Sight radius affects how quickly the agents converge to the already built pathwa
 \caption{An established network of paths from agents with very low sight radius}
 \end{figure}
 
+Backtracking governs how far backwards an agent is willing to go in order to find an alternate route. This was less effective than it sounds, since agents do not have any sort of memory of where they have been. As a result, agents would often go in circles trying to find a path around a particularly difficult biome. 
+
 \subsubsection{Terrain Generation Parameters}
-These effects were less pronounced on the system's behavior. Noise octaves provided stochastic levels of terrain difficulty, however the higher octaves are affecting the difficulties by such a small margin when compared to other aspects of pathway generation that they have little to no noticeable effect on paths. This could be refined.
+The map's noise octaves govern the number of successive noise functions that are added together to create the final perlin noise. The map's noise persistence specifics the amplitude of each octave of noise. These parameters had very few effects on the emergent pathway network, but were included for completeness sake. For more information on these parameters, see the explanation by Hugo Elias, who wrote an excellent tutorial on implementing perlin noise \cite{elias:perlin}.
 
-Biome count had similar effects. Each biome that must be traversed can be considered a sub-problem of our simulation. Having more biomes means that there are more biomes for a pathway to travel through, generally speaking at least. In a low density network this can have negligible effects because there are only a few pathways anyways, however in higher density path networks this shows structured pathways within each biome. 
-
+The biome count determined how many different biomes were generated using Voronoi tessellation. This had a noticeable effect on pathway networks. More biomes means that generated biomes are smaller, and so it is more likely that agents will detour around particularly difficult biomes entirely. When the biomes are large, these types of detours are much less common.
 
 \subsection{Extension: Terrain Regrowth}
-The terrain regrowth effect either does not affect the system very much, if the regrowth is slow enough to not destroy paths; or it forces agents to make and remake new paths if it's growing faster than the agents can wear it down. This is as expected, we figured it wouldn't have much effect on the regularly used paths, especially considering the rate at which it recovers in the real world; and would more serve to rebuild the nature next to paths. 
+The terrain regrowth can have interesting effects on the system. If the regrowth rate is very high, pathways can become overgrown and disappear before any other agents have a chance to use them. This results in a patch of terrain that almost never gets any easier to traverse, except when there is a very large number of agents moving through it.
 
+When the rate is lower, the main pathways are almost entirely unaffected, since they have enough traffic that the regeneration is outpaced by the trampling. Interestingly, though, there are situations that arise where pathways that were once heavily used are discarded in favor of newly created, easier pathways. In these cases, it is common for the original pathway to become overgrown, and to disappear entirely.
 
 \section{Discussion} 
-	Our inspiration for this project was 'off the beaten path' trails that are often found to emerge in places where humans and/or animals are presented with some non-descriptive landscape to traverse. Whether it's the lawn in front of math science, or a trail through the woods to the campsite latrine, it's clear that when a rudimentary pathway is formed agents in real life tend to walk the road more traveled. Additionally, every agent in our real world system is acting independent of each other, which makes modeling this system very easy in NetLogo. 
+	Whether you choose to interpret this simulation as paths in the lawn in front of math science, or a trail through the woods to the campsite latrine, it's clear that when a rudimentary pathway is formed, agents in real life tend to walk the road more traveled. This means that, indeed, agents tend to cause complex pathways to emerge in terrain even when they are not communicating with one another in any way.	Our simulation results show several interesting things about the way agents can cooperate without necessarily meaning to. 
 	
-	I think our simulations results show several interesting things about the way humans think and work together. Since our simulation can be thought of as graph traversal, it tends to optimize the distance based on difficulty, however this is only a half truth, because as agents walk across the map the damage terrain, which makes the 'optimal' solution change. I think a better way of putting it would be to say that our simulation starts with a naive pathway system created by the first agents that is not very efficient. Over time our simulation serves to optimize the difficulties of the patches it exists on, so our pathway becomes the most efficient version of that specific route possible.
+	Our simulation can be thought of as some sort of graph traversal problem. Each individual agent's goal is to find the optimal path across this graph, but the overall result is that these agents end up \textit{creating} this path. Agents walk across the map and damage terrain, which makes the 'optimal' solution change. It is safe to say that our simulation starts with a naive pathway system created by the first agents that is not very efficient. Over time our simulation serves to optimize the difficulties of the patches it exists on, so our pathway converges on an optimal path, while at the same time trying to minimize the overall terrain that agents need to move over.
 	
-Likewise, this is exactly what humans do in real life. For an example consider a group walking through the woods. If the first agent doesn't see the easiest path to their destination, they will pick a less efficient route, deteriorating it slightly in the process. Every agent thereafter will naturally follow this leader, also unaware of the paved highway 20 feet to the left, which is how they would optimize their travel distance. Instead they are optimizing the pass-ability of this secondary pathway, any future agents who walk over it will have an easier time.
+This is exactly what humans do in real life. For an example consider hikers walking through the woods. If the first hiker doesn't see the easiest path to their destination, they will pick a less efficient route, deteriorating it slightly in the process, but ultimately reaching their goal. Most agents thereafter will naturally follow this path. It does not matter if there is an optimal path 10 meters north if they can not see it. Their secondary pathway will continue to grow until it is almost as good as the optimal one, or becomes conjoined with the optimal one.
 
-This way of doing this actually shows a remarkable level of unconscious forethought and swarm behavior on humanity's behalf, and I find it hilarious how unaware we are of how often these side effects arise from our even most selfish behavior. Everyone who cuts across the Math Science lawn thinks that they are independently trying to optimize their walk to school, this is not considered altruistic, if anything we feel shame for walking on the grass. However this also has the side effect of reducing the difficulty of the short-cut path, and over time we end up with a grass free dirt path that might as well be paved, effectively replacing the old path with a new optimal solution for everyone. Again, the math science lawn is a great example. I do not think I have ever seen a single person leave through the north doors to head east, and walk all the way around the lawn instead of cutting across the dirt path. 
+This emergence seems to show a remarkable level of unconscious forethought and swarm behavior on humanity's behalf, when it is simply a side effect arising from our selfish behavior. 
 
-Now I want to be clear here that these extrapolations I am making are not rigorously tested, and should not by any means be taken as fact. My extrapolations about human's intentions stems from my deeply held belief that humans are, generally speaking, incredibly naive; especially when it comes to understanding their own behavior. If you agree with this, our simulation can be thought of as to outline the possibility of manipulating selfish agents into working together; which to me seems easier than getting them to willingly cooperate. 
+As an example, look at the lawn in front of the math sciences building at the University of Calgary. It is clear that agents (students) take shortcuts off the paved walkways, and cut across the grass to get to their classes. Each student does this presumably because it makes their personal journey that much shorter. Eventually, as more and more students do this, we end up with an established dirt path that is almost as easy to walk on as the paved one, and is used much more often, effectively replacing the old path with a new, shorter path for everyone. 
 
 % An example of a floating figure using the graphicx package.
 % Note that \label must occur AFTER (or within) \caption.
@@ -629,9 +629,10 @@ Now I want to be clear here that these extrapolations I am making are not rigoro
 
 
 \section{Conclusion}
-The conclusion goes here.
+	Ultimately, accepting our assumptions that agents in these simulations act independently and selfishly, and follow certain simple rules, such as always taking the best path that they can see, our simulation gives evidence to an interesting idea of cooperation. Specifically, it supports the idea that cooperation need not involve altruism or communication. Selfish agents can, in fact, cooperate in a way that benefits everyone.
 
-
+	If you wish to experiment with or contribute to this project, please check it out on github, at: \\
+\verb+github.com/Ironykins/wilderness-pathways+
 
 
 % conference papers do not normally have an appendix
