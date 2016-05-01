@@ -460,12 +460,51 @@ As was mentioned above, as agents move across the terrain, they trample that ter
 As an extension to the simulation, we implemented a system where, rather than being trampled permanently, terrain can slowly regenerate itself when left alone. Terrain regrows at a user specified rate. This rate scales with the missing integrity of the terrain tile, so regrowth is faster at low integrity, and slower at high integrity. Also, terrain will not regrow for a certain number of ticks after it has been trampled.
 
 We believed that over the long term, this may create a more accurate representation of how paths generate in the wilderness. If agents cease to use a certain path, it can be reclaimed by nature, and so the network of paths can not only grow, it can also shrink.
+%\includegraphics[scale=0.25]{image/voronoi}
+%\includegraphics[scale=0.25]{image/perlin}
 
 \section{Results}
-Results goes here.
+Our simulation does in fact produce an emergent network of pathways through the terrain. As you can see, agents tend to create simple networks from edge to edge, as well as forming pathways around the edge. 
 
-\section{Discussion}
-Discuss stuff here.
+\includegraphics[scale=0.25]{image/results1}
+\includegraphics[scale=0.25]{image/results2}
+
+Once an established pathway is found that leads in the same direction as our destination, the agents will walk along it instead of trampling nearby terrain. By graphing the travel distances of each turtle, and the average trip distance over time, we are able to see a clear logarithmic drop off of difficulty.
+
+\includegraphics[scale=0.25]{image/results3}
+
+Next I will go through how each type of parameter changes its behavior. 
+
+\subsection{Turtle Spawn Rates and Population Cap}
+The spawning frequency and maximum number of turtles affects the maps formation almost exclusively in the early stages of simulation. Once a network of pathways connects all four edges agents quickly converge to walking across them. Essentially once the pathway has formed these parameters amount to throughput. 
+
+\includegraphics[scale=0.25]{image/results4}
+	
+	In the early stages of the simulation this affects the density of our path network, essentially, how many paths through the center of the network are created. This higher density of paths reduce the average cost of traveling over the map as we create more direct pathways.
+
+\includegraphics[scale=0.25]{image/results5}
+
+\subsection{Agent Sight parameters: Sight Radius - Backtracking}
+Backtrack is something that never worked as well as we would have liked. We found that by letting agents turn around they were often stuck in two or three patch loops because as they trample the ground it becomes easier to walk on. I think we could remedy this, but we would need to change our movement system to work based on vectors instead of discrete movements. This would allow our agent’s velocity to respond to the difficulty of their terrain, which we could use to determine how fast an agent can turn around or even just stop. 
+Sight radius affects how quickly the agents converge to the already built pathway networks. Having a very low sight radius will generate a more dense pathway network, because they will not be able to find paths that are far apart. With a sight radius of 1, agents just move to the square closer to the destination with lower difficulty. This just tramples the entire map.
+
+\includegraphics[scale=0.25]{image/results6}
+
+\subsection{Terrain Generation Parameters}
+These effects were less pronounced on the system's behavior. Noise octaves provided stochastic levels of terrain difficulty, however the higher octaves are affecting the difficulties by such a small margin when compared to other aspects of pathway generation that they have little to no noticeable effect on paths. This could be refined.
+Biome count had similar effects. Each biome that must be traversed can be considered a sub-problem of our simulation. Having more biomes means that there are more biomes for a pathway to travel through, generally speaking at least. In a low density network this can have negligible effects because there are only a few pathways anyways, however in higher density path networks this shows structured pathways within each biome. 
+
+
+\subsection{Extension: Terrain Regrowth}
+The terrain regrowth effect either does not affect the system very much, if the regrowth is slow enough to not destroy paths; or it forces agents to make and remake new paths if it's growing faster than the agents can wear it down. This is as expected, we figured it wouldn't have much effect on the regularly used paths, especially considering the rate at which it recovers in the real world; and would more serve to rebuild the nature next to paths. 
+
+
+\section{Discussion} 
+	Our inspiration for this project was 'off the beaten path' trails that are often found to emerge in places where humans and/or animals are presented with some non-descriptive landscape to traverse. Whether it's the lawn in front of math science, or a trail through the woods to the campsite latrine, it's clear that when a rudimentary pathway is formed agents in real life tend to walk the road more traveled. Additionally, every agent in our real world system is acting independent of each other, which makes modeling this system very easy in NetLogo. 
+	I think our simulations results show several interesting things about the way humans think and work together. Since our simulation can be thought of as graph traversal, it tends to optimize the distance based on difficulty, however this is only a half truth, because as agents walk across the map the damage terrain, which makes the 'optimal' solution change. I think a better way of putting it would be to say that our simulation starts with a naive pathway system created by the first agents that is not very efficient. Over time our simulation serves to optimize the difficulties of the patches it exists on, so our pathway becomes the most efficient version of that specific route possible.
+Likewise, this is exactly what humans do in real life. For an example consider a group walking through the woods. If the first agent doesn't see the easiest path to their destination, they will pick a less efficient route, deteriorating it slightly in the process. Every agent thereafter will naturally follow this leader, also unaware of the paved highway 20 feet to the left, which is how they would optimize their travel distance. Instead they are optimizing the pass-ability of this secondary pathway, any future agents who walk over it will have an easier time.
+This way of doing this actually shows a remarkable level of unconscious forethought and swarm behavior on humanity's behalf, and I find it hilarious how unaware we are of how often these side effects arise from our even most selfish behavior. Everyone who cuts across the Math Science lawn thinks that they are independently trying to optimize their walk to school, this is not considered altruistic, if anything we feel shame for walking on the grass. However this also has the side effect of reducing the difficulty of the short-cut path, and over time we end up with a grass free dirt path that might as well be paved, effectively replacing the old path with a new optimal solution for everyone. Again, the math science lawn is a great example. I do not think I have ever seen a single person leave through the north doors to head east, and walk all the way around the lawn instead of cutting across the dirt path. 
+Now I want to be clear here that these extrapolations I am making are not rigorously tested, and should not by any means be taken as fact. My extrapolations about human's intentions stems from my deeply held belief that humans are, generally speaking, incredibly naive; especially when it comes to understanding their own behavior. If you agree with this, our simulation can be thought of as to outline the possibility of manipulating selfish agents into working together; which to me seems easier than getting them to willingly cooperate. 
 
 % An example of a floating figure using the graphicx package.
 % Note that \label must occur AFTER (or within) \caption.
